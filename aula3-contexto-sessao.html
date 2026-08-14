@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula 3 — Contexto, Sessão e Memória</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050a14;
+  --cyan: #00e5ff;
+  --green: #00ff88;
+  --orange: #ff6b35;
+  --purple: #7c3aed;
+  --pink: #f472b6;
+  --text: #e8f4f8;
+  --muted: #7fa8c0;
+  --card: rgba(255,255,255,0.04);
+  --border: rgba(0,229,255,0.15);
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif; }
+
+#bg { position:fixed; inset:0; z-index:0; opacity:.3; pointer-events:none; }
+
+#progress-bar {
+  position:fixed; top:0; left:0; height:3px; z-index:200;
+  background:linear-gradient(90deg, var(--cyan), var(--purple));
+  transition: width .4s ease;
+}
+
+#topbar {
+  position:fixed; top:0; left:0; right:0; height:52px; z-index:150;
+  background:rgba(5,10,20,.88); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; padding:0 32px;
+}
+.tb-label { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--cyan); letter-spacing:2px; text-transform:uppercase; }
+.tb-counter { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--muted); }
+.tb-title { font-family:'IBM Plex Sans',sans-serif; font-size:13px; color:var(--muted); max-width:360px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+#slides { position:fixed; inset:0; z-index:1; }
+
+.slide {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; justify-content:flex-start; align-items:center;
+  padding:72px 60px 80px;
+  opacity:0; pointer-events:none;
+  transition: opacity .5s ease, transform .5s ease;
+  transform: translateX(60px);
+  overflow-y: auto;
+}
+.slide.active { opacity:1; pointer-events:all; transform:translateX(0); }
+.slide.prev   { opacity:0; pointer-events:none; transform:translateX(-60px); }
+.slide-inner { width:100%; max-width:1060px; margin:auto 0; }
+
+#nav-prev, #nav-next {
+  position:fixed; top:50%; z-index:200;
+  transform:translateY(-50%);
+  width:48px; height:48px; border-radius:50%;
+  border:1px solid var(--border); background:rgba(5,10,20,.7);
+  backdrop-filter:blur(8px); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; color:var(--cyan);
+  transition:all .2s; user-select:none;
+}
+#nav-prev { left:16px; }
+#nav-next { right:16px; }
+#nav-prev:hover, #nav-next:hover { background:rgba(0,229,255,.12); border-color:var(--cyan); }
+#nav-prev.disabled, #nav-next.disabled { opacity:.25; pointer-events:none; }
+
+#dots { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); display:flex; gap:7px; z-index:200; }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--muted); opacity:.4; cursor:pointer; transition:all .3s; }
+.dot.active { background:var(--cyan); opacity:1; transform:scale(1.3); }
+
+.tag  { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--cyan);   letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; display:block; }
+.gtag { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--green);  letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; display:block; }
+.ptag { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--purple); letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; display:block; }
+.otag { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--orange); letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; display:block; }
+
+h1.hero-title { font-family:'Syne',sans-serif; font-size:clamp(2.2rem,4.6vw,4.2rem); font-weight:800; line-height:1.05; margin-bottom:20px; }
+h2.sec-title  { font-family:'Syne',sans-serif; font-size:clamp(1.5rem,3.3vw,2.5rem); font-weight:800; line-height:1.15; margin-bottom:12px; }
+h3.slide-h3   { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:700; margin-bottom:16px; }
+p.lead { color:var(--muted); font-size:1rem; line-height:1.7; margin-bottom:24px; }
+
+.badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(0,229,255,.08); border:1px solid var(--border);
+  border-radius:20px; padding:6px 16px;
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--cyan); letter-spacing:1px;
+  margin-bottom:28px; width:fit-content;
+}
+.badge::before { content:''; width:7px; height:7px; background:var(--green); border-radius:50%; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
+
+.hero-q {
+  background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(124,58,237,.06));
+  border:1px solid rgba(0,229,255,.2); border-left:4px solid var(--cyan);
+  border-radius:12px; padding:22px 28px; font-size:1.1rem; font-style:italic; color:var(--text);
+  max-width:740px; margin-top:8px;
+  animation:fadeUp .8s ease both .3s;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+.card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+@media(max-width:680px){.g2,.g3{grid-template-columns:1fr}}
+
+.pill-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; }
+.pill { background:rgba(0,255,136,.07); border:1px solid rgba(0,255,136,.25); border-radius:20px; padding:5px 14px; font-size:12px; color:var(--green); font-family:'IBM Plex Mono',monospace; }
+
+.vs-wrap { display:grid; grid-template-columns:1fr 56px 1fr; gap:0; align-items:stretch; margin-bottom:20px; }
+@media(max-width:680px){.vs-wrap{grid-template-columns:1fr}.vs-sep{display:none}}
+.vs-col { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:10px; }
+.vs-col.ml { border-color:rgba(255,107,53,.25); }
+.vs-col.rn { border-color:rgba(0,229,255,.25); }
+.vs-col-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.vs-sep { display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; color:var(--muted); }
+.vs-item { display:flex; gap:8px; align-items:flex-start; padding:9px 12px; border-radius:8px; background:rgba(0,0,0,.25); font-size:.83rem; line-height:1.5; }
+.vs-item .vt { color:var(--muted); }
+.vs-item .vt strong { color:var(--text); display:block; margin-bottom:1px; }
+.vs-limit { border:1px solid rgba(255,107,53,.2)!important; background:rgba(255,107,53,.04)!important; }
+.vs-strength { border:1px solid rgba(0,229,255,.15)!important; background:rgba(0,229,255,.03)!important; }
+
+.bridge { background:linear-gradient(135deg,rgba(0,229,255,.05),rgba(124,58,237,.05)); border:1px solid rgba(0,229,255,.2); border-radius:14px; padding:24px 28px; }
+
+.quiz-q { font-family:'Syne',sans-serif; font-size:1.02rem; font-weight:700; margin-bottom:16px; }
+.qopts { display:flex; flex-direction:column; gap:9px; }
+.qopt { padding:13px 18px; border-radius:10px; border:1px solid var(--border); cursor:pointer; transition:all .2s; font-size:.88rem; background:transparent; color:var(--text); text-align:left; width:100%; font-family:inherit; }
+.qopt:hover { border-color:var(--cyan); background:rgba(0,229,255,.05); }
+.qopt.correct { border-color:var(--green); background:rgba(0,255,136,.07); color:var(--green); }
+.qopt.wrong   { border-color:var(--orange); background:rgba(255,107,53,.07); color:var(--orange); }
+.qfb { margin-top:12px; padding:12px 16px; border-radius:9px; font-size:.84rem; display:none; line-height:1.5; }
+.qfb.show { display:block; }
+.qfb.cfb { background:rgba(0,255,136,.07); border:1px solid rgba(0,255,136,.2); color:var(--green); }
+.qfb.wfb { background:rgba(255,107,53,.07); border:1px solid rgba(255,107,53,.2); color:var(--orange); }
+
+.slide-scroll { overflow-y:auto; max-height:calc(100vh - 140px); padding-right:8px; }
+.slide-scroll::-webkit-scrollbar { width:4px; }
+.slide-scroll::-webkit-scrollbar-thumb { background:rgba(0,229,255,.2); border-radius:2px; }
+
+.practice-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+@media(max-width:680px){ .practice-grid{ grid-template-columns:1fr; } }
+.practice-card { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--cyan); border-radius:12px; padding:16px 18px; transition:.2s; }
+.practice-card:hover { border-color:var(--cyan); background:rgba(0,229,255,.04); }
+.practice-card b { display:block; font-family:'Syne',sans-serif; font-size:.92rem; margin-bottom:4px; }
+.practice-card span { color:var(--muted); font-size:.81rem; line-height:1.5; }
+
+.chat-list { display:flex; flex-direction:column; gap:10px; }
+.chat-bubble { background:var(--card); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:13px 18px; font-size:.88rem; color:var(--text); transition:.2s; }
+.chat-bubble:hover { border-color:var(--purple); background:rgba(124,58,237,.06); transform:translateX(4px); }
+.chat-bubble .cb-lbl { display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--purple); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+
+.next-pills { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.next-pill { font-family:'IBM Plex Mono',monospace; font-size:12px; padding:8px 16px; border-radius:20px; background:rgba(124,58,237,.08); border:1px solid rgba(124,58,237,.3); color:var(--pink); }
+
+.quote-box { background:rgba(0,0,0,.3); border-left:4px solid var(--purple); border-radius:10px; padding:18px 22px; font-style:italic; color:var(--text); font-size:.95rem; line-height:1.65; }
+
+.code {
+  background:rgba(0,0,0,.42); border:1px solid var(--border); border-radius:10px;
+  padding:14px 18px; font-family:'IBM Plex Mono',monospace; font-size:.76rem;
+  line-height:1.75; overflow-x:auto; white-space:pre; color:#bfe4f2;
+}
+.code .k { color:var(--pink); }
+.code .s { color:var(--green); }
+.code .c { color:var(--muted); font-style:italic; }
+.code .h { color:var(--cyan); font-weight:500; }
+.code .o { color:var(--orange); }
+
+.tbl { width:100%; border-collapse:collapse; font-size:.84rem; }
+.tbl th { text-align:left; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--cyan); padding:10px 14px; border-bottom:1px solid var(--border); }
+.tbl td { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.05); color:var(--muted); vertical-align:top; line-height:1.55; }
+.tbl td strong { color:var(--text); }
+.tbl tbody tr:hover td { background:rgba(0,229,255,.03); }
+
+.step { display:flex; gap:14px; align-items:flex-start; padding:11px 15px; background:var(--card); border:1px solid var(--border); border-left:3px solid var(--cyan); border-radius:10px; margin-bottom:9px; }
+.step-time { flex-shrink:0; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--cyan); background:rgba(0,229,255,.08); border-radius:6px; padding:5px 9px; min-width:62px; text-align:center; }
+.step-body { font-size:.84rem; line-height:1.55; color:var(--muted); }
+.step-body b { color:var(--text); display:block; margin-bottom:2px; font-family:'Syne',sans-serif; font-size:.88rem; }
+.step.hl { border-left-color:var(--orange); }
+.step.hl .step-time { color:var(--orange); background:rgba(255,107,53,.1); }
+
+.yn { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:680px){ .yn{ grid-template-columns:1fr; } }
+.yn-col { border-radius:14px; padding:18px 20px; }
+.yn-yes { background:rgba(0,255,136,.05); border:1px solid rgba(0,255,136,.22); }
+.yn-no  { background:rgba(255,107,53,.05); border:1px solid rgba(255,107,53,.22); }
+.yn-col h4 { font-family:'Syne',sans-serif; font-size:.95rem; margin-bottom:12px; }
+.yn-col li { list-style:none; font-size:.83rem; color:var(--muted); line-height:1.55; padding:6px 0 6px 20px; position:relative; }
+.yn-yes li::before { content:'✓'; position:absolute; left:0; color:var(--green); }
+.yn-no  li::before { content:'✕'; position:absolute; left:0; color:var(--orange); }
+
+/* ═══ NOVOS COMPONENTES — AULA 3 ═══ */
+
+.ctx-wrap { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:22px 24px; }
+.ctxbar { display:flex; height:46px; border-radius:10px; overflow:hidden; border:1px solid var(--border); background:rgba(0,0,0,.35); }
+.ctxseg { display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#050a14; font-weight:600; width:0; transition:width 1.1s cubic-bezier(.2,.9,.2,1); overflow:hidden; white-space:nowrap; }
+.ctx-legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
+.ctx-lg { display:flex; align-items:center; gap:7px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--muted); }
+.ctx-lg i { width:10px; height:10px; border-radius:3px; display:block; }
+.ctx-btns { display:flex; gap:9px; margin-bottom:16px; flex-wrap:wrap; }
+.ctx-btn { font-family:'IBM Plex Mono',monospace; font-size:11px; padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; transition:.2s; }
+.ctx-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.ctx-btn.on { border-color:var(--cyan); background:rgba(0,229,255,.1); color:var(--cyan); }
+
+.mem-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media(max-width:680px){ .mem-grid{ grid-template-columns:1fr; } }
+.mem { border-radius:16px; padding:20px 22px; }
+.mem-short { background:rgba(255,107,53,.05); border:1px solid rgba(255,107,53,.25); }
+.mem-long  { background:rgba(0,255,136,.05); border:1px solid rgba(0,255,136,.25); }
+.mem h4 { font-family:'Syne',sans-serif; font-size:1.05rem; margin-bottom:4px; }
+.mem .msub { font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px; }
+.mem-row { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:.83rem; line-height:1.5; }
+.mem-row:last-child { border-bottom:none; }
+.mem-row .ml { flex-shrink:0; width:82px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; padding-top:2px; }
+.mem-row .mv { color:var(--text); }
+
+.hsec { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-bottom:10px; border-left:3px solid var(--purple); }
+.hsec .hn { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--purple); letter-spacing:1.5px; margin-bottom:5px; }
+.hsec .ht { font-family:'Syne',sans-serif; font-weight:700; font-size:.92rem; margin-bottom:4px; }
+.hsec .hd { color:var(--muted); font-size:.82rem; line-height:1.55; }
+.hsec.star { border-left-color:var(--orange); background:rgba(255,107,53,.04); }
+.hsec.star .hn { color:var(--orange); }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div id="progress-bar"></div>
+
+<div id="topbar">
+  <span class="tb-label">⬡ Aula 03 — Contexto &amp; Sessão</span>
+  <span class="tb-title" id="slide-title-bar"></span>
+  <span class="tb-counter" id="slide-counter"></span>
+</div>
+
+<div id="nav-prev">←</div>
+<div id="nav-next">→</div>
+<div id="dots"></div>
+
+<div id="slides">
+
+<!-- ─── 0: HERO ─── -->
+<div class="slide active" data-title="Abertura">
+<div class="slide-inner">
+  <div class="badge">CONTEXTO, SESSÃO E MEMÓRIA · AULA 3</div>
+  <h1 class="hero-title">Uma semana<br>se <span style="color:var(--orange)">passou</span>.<br>Ele não lembra<br>de <span style="color:var(--cyan)">nada</span>.</h1>
+  <p class="lead" style="max-width:640px;">O AGENTS.md que vocês escreveram continua lá, intacto. Mas tudo que aconteceu <em>dentro</em> daquela conversa evaporou. Hoje a gente resolve isso.</p>
+  <div class="hero-q">💭 Antes de qualquer coisa: <strong style="font-style:normal;color:var(--text)">abram um chat NOVO.</strong> Não continuem a conversa da aula passada. A dor faz parte do plano.</div>
+  <div class="pill-row" style="margin-top:24px;">
+    <div class="pill">🪟 Janela de contexto</div>
+    <div class="pill">💬 Sessão</div>
+    <div class="pill">🧠 Curto vs longo prazo</div>
+    <div class="pill">📋 handoff.md</div>
+    <div class="pill">📈 Regra da promoção</div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 1: O EXPERIMENTO ─── -->
+<div class="slide" data-title="O Experimento">
+<div class="slide-inner">
+  <span class="otag">01 — antes da teoria, a evidência</span>
+  <h2 class="sec-title">Vamos fazer o <span style="color:var(--orange)">teste</span> agora</h2>
+  <p class="lead" style="margin-bottom:20px;">Chat novo, mesmo repositório, AGENTS.md carregado normalmente. Peçam:</p>
+  <div class="chat-bubble" style="margin-bottom:20px;font-size:.95rem;border-color:rgba(255,107,53,.3);">
+    <span class="cb-lbl" style="color:var(--orange);">prompt do experimento</span>
+    Adicione o <code>check_duplicatas</code> ao projeto.
+  </div>
+  <p class="lead" style="margin-bottom:16px;">Observem o resultado com atenção. O AGENTS.md garantiu bastante coisa — a assinatura, o registro no dicionário, o teste. Mas provavelmente:</p>
+  <div class="practice-grid">
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🔄 Ele inverteu a semântica do <code>ok</code></b><span>Vocês decidiram que <code style="font-family:'IBM Plex Mono',monospace;">ok=True</code> significa "não achou problema". Não está escrito em lugar nenhum. Chance alta de ter vindo ao contrário.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🔢 Ele contou linhas, não ocorrências</b><span>Outra decisão da aula passada que ficou só na conversa. E que agora está inconsistente entre dois checks do mesmo projeto.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>📂 Ele leu o CSV dentro do teste</b><span>Vocês já tentaram isso e voltaram atrás porque ficava frágil. Ele não tem como saber — e vai repetir o mesmo caminho errado.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>❓ Ele decidiu sozinho o que estava aberto</b><span>Aquela pergunta que vocês deixaram pra depois? Ele respondeu no lugar de vocês, sem avisar.</span></div>
+  </div>
+  <div class="bridge" style="margin-top:18px;">
+    <span style="color:var(--muted);font-size:.92rem;">🎯 Nada disso é culpa do AGENTS.md — ele fez o trabalho dele. O que faltou é de <strong style="color:var(--text)">outra natureza</strong>: não é "como se trabalha aqui", é "o que aconteceu da última vez". São duas memórias diferentes, e hoje a gente aprende a separar as duas.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 2: JANELA DE CONTEXTO ─── -->
+<div class="slide" data-title="A Janela de Contexto">
+<div class="slide-inner">
+  <span class="tag">02 — o recurso escasso</span>
+  <h2 class="sec-title">O modelo não <span style="color:var(--cyan)">lembra</span>.<br>A interface <span style="color:var(--purple)">reenvia</span>.</h2>
+  <p class="lead" style="margin-bottom:20px;">Esse é o conceito mais importante da aula, e o mais contraintuitivo. Quando você manda a décima mensagem numa conversa, o Cursor não manda só ela — <strong style="color:var(--text)">ele manda as dez, do começo, de novo.</strong></p>
+  <div class="g2" style="margin-bottom:18px;">
+    <div class="card">
+      <h3 class="slide-h3" style="color:var(--purple);">🎭 O que parece</h3>
+      <p style="color:var(--muted);font-size:.87rem;line-height:1.75;">Você conversa com alguém que vai acumulando entendimento sobre o projeto ao longo do papo. Quanto mais vocês falam, mais ele sabe.</p>
+    </div>
+    <div class="card" style="border-color:rgba(0,229,255,.3);">
+      <h3 class="slide-h3" style="color:var(--cyan);">⚙️ O que acontece</h3>
+      <p style="color:var(--muted);font-size:.87rem;line-height:1.75;">A cada mensagem, um pacote novo é montado do zero e enviado inteiro. O "entendimento" é só o histórico sendo relido. Nada foi aprendido — foi tudo <em>reapresentado</em>.</p>
+    </div>
+  </div>
+  <div class="practice-grid">
+    <div class="practice-card"><b>📏 O espaço é medido em tokens</b><span>Um token é aproximadamente um pedaço de palavra. Código gasta mais token por linha do que texto corrido.</span></div>
+    <div class="practice-card"><b>💰 Conversa longa custa caro</b><span>Se o histórico é reenviado sempre, cada mensagem nova carrega o peso de todas as anteriores.</span></div>
+    <div class="practice-card"><b>🚪 O que sai da janela deixa de existir</b><span>Não fica guardado em canto nenhum. Não é esquecimento — é ausência.</span></div>
+    <div class="practice-card"><b>🧩 Tudo compete pelo mesmo espaço</b><span>Regras, arquivos, histórico e sua pergunta disputam o mesmo orçamento finito.</span></div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 3: ANATOMIA DA JANELA ─── -->
+<div class="slide" data-title="Anatomia da Janela">
+<div class="slide-inner slide-scroll">
+  <span class="ptag">02 — quem ocupa o espaço</span>
+  <h2 class="sec-title">Como a janela <span style="color:var(--purple)">enche</span></h2>
+  <p class="lead" style="margin-bottom:16px;">Acompanhe a mesma sessão em três momentos. Repare no que acontece com a fatia rosa — a sua pergunta atual.</p>
+  <div class="ctx-btns">
+    <button class="ctx-btn on" id="c-a" onclick="setCtx('a')">① início da sessão</button>
+    <button class="ctx-btn" id="c-b" onclick="setCtx('b')">② depois de 15 mensagens</button>
+    <button class="ctx-btn" id="c-c" onclick="setCtx('c')">③ depois de 40 mensagens</button>
+  </div>
+  <div class="ctx-wrap">
+    <div class="ctxbar">
+      <div class="ctxseg" id="s-sys" style="background:#3c5c6e;">sistema</div>
+      <div class="ctxseg" id="s-rul" style="background:#00ff88;">regras</div>
+      <div class="ctxseg" id="s-fil" style="background:#00e5ff;">arquivos</div>
+      <div class="ctxseg" id="s-his" style="background:#7c3aed;">histórico</div>
+      <div class="ctxseg" id="s-you" style="background:#f472b6;">você</div>
+      <div class="ctxseg" id="s-fre" style="background:rgba(255,255,255,.06);"></div>
+    </div>
+    <div class="ctx-legend">
+      <div class="ctx-lg"><i style="background:#3c5c6e"></i> system prompt do Cursor</div>
+      <div class="ctx-lg"><i style="background:#00ff88"></i> agent rules</div>
+      <div class="ctx-lg"><i style="background:#00e5ff"></i> arquivos lidos</div>
+      <div class="ctx-lg"><i style="background:#7c3aed"></i> histórico da conversa</div>
+      <div class="ctx-lg"><i style="background:#f472b6"></i> sua pergunta</div>
+      <div class="ctx-lg"><i style="background:rgba(255,255,255,.15)"></i> livre</div>
+    </div>
+    <div id="ctx-note" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:.87rem;line-height:1.65;color:var(--muted);"></div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 4: SESSÃO ─── -->
+<div class="slide" data-title="O Que É Uma Sessão">
+<div class="slide-inner">
+  <span class="gtag">03 — a unidade que ninguém define</span>
+  <h2 class="sec-title">Sessão é a janela <span style="color:var(--green)">viva</span></h2>
+  <p class="lead" style="margin-bottom:20px;">Uma sessão é uma conversa: começa quando você abre um chat novo e morre quando você fecha. Enquanto ela vive, tudo que aconteceu ali está disponível. Quando morre, some — mesmo que o código continue lá.</p>
+  <div class="vs-wrap">
+    <div class="vs-col rn">
+      <div class="vs-col-title" style="color:var(--cyan)">✅ Sobrevive ao fim da sessão</div>
+      <div class="vs-item"><span>💾</span><div class="vt"><strong>O código escrito</strong>Está em disco, commitado. É o resultado.</div></div>
+      <div class="vs-item"><span>📜</span><div class="vt"><strong>As agent rules</strong>AGENTS.md e .mdc estão no repositório e recarregam sozinhos.</div></div>
+      <div class="vs-item"><span>📝</span><div class="vt"><strong>O que você escreveu em arquivo</strong>Qualquer coisa que virou texto no repo continua existindo.</div></div>
+      <div class="vs-item vs-strength"><span>🧠</span><div class="vt"><strong style="color:var(--cyan)">O que está na sua cabeça</strong>Por enquanto. Até você esquecer também — e você vai.</div></div>
+    </div>
+    <div class="vs-sep">VS</div>
+    <div class="vs-col ml">
+      <div class="vs-col-title" style="color:var(--orange)">❌ Morre com a sessão</div>
+      <div class="vs-item"><span>🤔</span><div class="vt"><strong>Por que você escolheu esse caminho</strong>O código mostra o "o quê". Nunca o "por quê".</div></div>
+      <div class="vs-item"><span>🚫</span><div class="vt"><strong>As três coisas que você tentou antes</strong>O código só guarda o que deu certo. O que falhou não deixa rastro.</div></div>
+      <div class="vs-item"><span>⏸️</span><div class="vt"><strong>Onde exatamente você parou</strong>E qual era o próximo passo que estava claríssimo na sua cabeça.</div></div>
+      <div class="vs-item vs-limit"><span>❓</span><div class="vt"><strong style="color:var(--orange)">As decisões que ficaram em aberto</strong>Aquilo que você deixou pra resolver depois. Ninguém registrou que estava pendente.</div></div>
+    </div>
+  </div>
+  <div class="quote-box">
+    💭 Repare que a coluna da direita não é informação técnica — é <strong style="color:var(--text)">contexto de trabalho</strong>. E é justamente o que um colega humano te passaria em dois minutos de conversa antes de sair de férias.
+  </div>
+</div>
+</div>
+
+<!-- ─── 5: CONTEXT ROT ─── -->
+<div class="slide" data-title="A Degradação Silenciosa">
+<div class="slide-inner">
+  <span class="otag">04 — o problema que ninguém vê chegando</span>
+  <h2 class="sec-title">A qualidade cai <span style="color:var(--orange)">antes</span> do limite</h2>
+  <p class="lead" style="margin-bottom:20px;">Você não bate na parede da janela de contexto e recebe um erro. O que acontece é pior: a resposta vai piorando aos poucos, e você demora pra perceber. A atenção do modelo se dilui num mar de contexto irrelevante.</p>
+  <div class="card" style="margin-bottom:18px;border-color:rgba(255,107,53,.28);">
+    <h3 class="slide-h3" style="color:var(--orange);">🚨 Os sinais de que sua sessão apodreceu</h3>
+    <div style="color:var(--muted);font-size:.87rem;line-height:2;">
+      → Ele reescreve uma função que já existe no arquivo aberto<br>
+      → Ele volta a violar uma regra que estava seguindo direitinho até a mensagem 20<br>
+      → As respostas ficam genéricas, como se ele tivesse perdido a especificidade do projeto<br>
+      → Você corrige a mesma coisa pela terceira vez na mesma conversa<br>
+      → Ele "esquece" uma decisão que vocês combinaram meia hora atrás
+    </div>
+  </div>
+  <div class="practice-grid">
+    <div class="practice-card" style="border-left-color:var(--green);"><b>🔄 Recomeçar é barato</b><span>Chat novo com um bom resumo produz respostas melhores que insistir numa conversa de 60 mensagens. Não é desistir — é higiene.</span></div>
+    <div class="practice-card" style="border-left-color:var(--green);"><b>🎯 Uma sessão, uma tarefa</b><span>Terminou o check de duplicatas? Fecha e abre outra pro próximo. Sessão não é lugar de acumular.</span></div>
+  </div>
+  <p style="color:var(--muted);font-size:.82rem;margin-top:16px;line-height:1.6;">💡 Esse fenômeno tem nome — <strong style="color:var(--text)">context rot</strong> — e vamos dedicar uma aula inteira a ele. Por hoje, basta reconhecer os sinais e saber que a saída é recomeçar bem, não insistir.</p>
+</div>
+</div>
+
+<!-- ─── 6: DUAS MEMÓRIAS ─── -->
+<div class="slide" data-title="Duas Memórias">
+<div class="slide-inner slide-scroll">
+  <span class="tag">05 — o conceito central de hoje</span>
+  <h2 class="sec-title">Duas memórias, dois <span style="color:var(--cyan)">lugares</span></h2>
+  <p class="lead" style="margin-bottom:18px;">O erro clássico é jogar tudo no AGENTS.md. Mas as duas coisas têm naturezas diferentes — e misturar as duas estraga as duas.</p>
+  <div class="mem-grid" style="margin-bottom:18px;">
+    <div class="mem mem-short">
+      <h4 style="color:var(--orange);">Curto prazo</h4>
+      <div class="msub" style="color:var(--orange);">estado da sessão</div>
+      <div class="mem-row"><div class="ml">onde vive</div><div class="mv"><code style="font-family:'IBM Plex Mono',monospace;">docs/handoff.md</code></div></div>
+      <div class="mem-row"><div class="ml">responde</div><div class="mv">"onde eu parei e o que já tentei?"</div></div>
+      <div class="mem-row"><div class="ml">validade</div><div class="mv">horas ou dias</div></div>
+      <div class="mem-row"><div class="ml">natureza</div><div class="mv">rascunho, sobrescrito a cada sessão</div></div>
+      <div class="mem-row"><div class="ml">versiona?</div><div class="mv" style="color:var(--orange);">não — fica no .gitignore</div></div>
+      <div class="mem-row"><div class="ml">quem escreve</div><div class="mv">o agente, no fim da sessão, e você revisa</div></div>
+    </div>
+    <div class="mem mem-long">
+      <h4 style="color:var(--green);">Longo prazo</h4>
+      <div class="msub" style="color:var(--green);">convenção durável</div>
+      <div class="mem-row"><div class="ml">onde vive</div><div class="mv"><code style="font-family:'IBM Plex Mono',monospace;">AGENTS.md</code>, <code style="font-family:'IBM Plex Mono',monospace;">.mdc</code>, ADR</div></div>
+      <div class="mem-row"><div class="ml">responde</div><div class="mv">"como se trabalha neste projeto?"</div></div>
+      <div class="mem-row"><div class="ml">validade</div><div class="mv">meses</div></div>
+      <div class="mem-row"><div class="ml">natureza</div><div class="mv">estável, editado com intenção</div></div>
+      <div class="mem-row"><div class="ml">versiona?</div><div class="mv" style="color:var(--green);">sim — e revisa em PR</div></div>
+      <div class="mem-row"><div class="ml">quem escreve</div><div class="mv">você, com o agente ajudando a redigir</div></div>
+    </div>
+  </div>
+  <div class="bridge">
+    <span style="color:var(--muted);font-size:.92rem;">🪨 Uma imagem que ajuda: o <strong style="color:var(--orange)">handoff é sedimento</strong> — se deposita rápido e é levado pela próxima correnteza. O <strong style="color:var(--green)">AGENTS.md é rocha</strong> — leva tempo pra se formar e fica. E a rocha se forma a partir do sedimento que insistiu em voltar.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 7: ANATOMIA DO HANDOFF ─── -->
+<div class="slide" data-title="Anatomia do Handoff">
+<div class="slide-inner slide-scroll">
+  <span class="ptag">06 — o arquivo de hoje</span>
+  <h2 class="sec-title">As cinco seções de um <span style="color:var(--purple)">handoff</span></h2>
+  <p class="lead" style="margin-bottom:16px;">É um arquivo curto — meia página. Ele não descreve o projeto: descreve <em>a sessão</em>.</p>
+  <div class="hsec">
+    <div class="hn">01</div>
+    <div class="ht">Onde parei</div>
+    <div class="hd">O estado atual em duas ou três frases. O que está funcionando, o que está pela metade. Não é changelog — é foto do momento.</div>
+  </div>
+  <div class="hsec">
+    <div class="hn">02</div>
+    <div class="ht">Decisões que tomei e que NÃO estão óbvias no código</div>
+    <div class="hd">Aquelas que qualquer um desfaria por achar que estão erradas. "Escolhi dataclass em vez de NamedTuple porque vamos adicionar campo depois." O código mostra a escolha; só isso mostra o motivo.</div>
+  </div>
+  <div class="hsec star">
+    <div class="hn">03 · a mais valiosa e a mais esquecida</div>
+    <div class="ht">O que eu tentei e NÃO funcionou</div>
+    <div class="hd">O código é um registro exclusivo de sucessos. Todo caminho que você percorreu e abandonou desapareceu sem deixar rastro — e o agente novo vai percorrer exatamente o mesmo, com o mesmo entusiasmo, chegando no mesmo lugar.</div>
+  </div>
+  <div class="hsec">
+    <div class="hn">04</div>
+    <div class="ht">Próximo passo exato</div>
+    <div class="hd">Uma frase acionável, não uma área temática. "Implementar check_duplicatas seguindo o molde de check_nulos" — não "continuar os checks".</div>
+  </div>
+  <div class="hsec">
+    <div class="hn">05</div>
+    <div class="ht">Arquivos relevantes agora</div>
+    <div class="hd">Dois ou três caminhos. Serve para o agente saber onde olhar primeiro em vez de varrer o repositório inteiro — economia de contexto direta.</div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 8: O QUE NÃO FUNCIONOU ─── -->
+<div class="slide" data-title="O Registro Negativo">
+<div class="slide-inner">
+  <span class="otag">06 — por que a seção 3 é a mais importante</span>
+  <h2 class="sec-title">O código só guarda os <span style="color:var(--orange)">acertos</span></h2>
+  <p class="lead" style="margin-bottom:20px;">Pense no que sobra de uma tarde de trabalho. Você tentou quatro abordagens, três não deram certo. O que fica no repositório é a quarta — as outras três somem como se nunca tivessem existido.</p>
+  <div class="g2" style="margin-bottom:18px;">
+    <div class="card" style="border-color:rgba(255,107,53,.25);">
+      <h3 class="slide-h3" style="color:var(--orange);">😵 Sem registro negativo</h3>
+      <div style="color:var(--muted);font-size:.86rem;line-height:1.8;">
+        Você: <em>"adicione o check de duplicatas"</em><br>
+        Agente: escreve um teste que lê o CSV real<br>
+        Você: "não, isso fica frágil"<br>
+        Agente: corrige<br><br>
+        <strong style="color:var(--orange)">Semana seguinte, sessão nova: acontece exatamente igual de novo.</strong>
+      </div>
+    </div>
+    <div class="card" style="border-color:rgba(0,255,136,.25);">
+      <h3 class="slide-h3" style="color:var(--green);">🎯 Com registro negativo</h3>
+      <div class="code" style="font-size:.72rem;"><span class="h">## O que tentei e não funcionou</span>
+
+- Pedi pro agente ler <span class="s">vendas.csv</span>
+  dentro do teste. Ficou frágil:
+  quebra se o CSV mudar.
+  <span class="o">Não repetir.</span></div>
+      <p style="color:var(--muted);font-size:.82rem;line-height:1.6;margin-top:10px;">Quatro linhas. Economiza o mesmo erro toda semana, para sempre.</p>
+    </div>
+  </div>
+  <div class="quote-box">
+    💭 Um colega humano voltando de férias te contaria isso em dez segundos: <em>"ah, não tenta pelo caminho X, a gente já tentou."</em> É literalmente a informação mais barata de escrever e a mais cara de redescobrir.
+  </div>
+</div>
+</div>
+
+<!-- ─── 9: REGRA DA PROMOÇÃO ─── -->
+<div class="slide" data-title="A Regra da Promoção">
+<div class="slide-inner">
+  <span class="gtag">07 — como as duas memórias conversam</span>
+  <h2 class="sec-title">Apareceu <span style="color:var(--green)">três vezes</span>? Sobe.</h2>
+  <p class="lead" style="margin-bottom:18px;">Handoff e AGENTS.md não são compartimentos isolados. Existe um fluxo entre os dois — e a regra é simples o bastante para você aplicar sem pensar.</p>
+  <div class="card" style="padding:20px;margin-bottom:18px;">
+    <svg viewBox="0 0 900 190" style="width:100%;height:auto;display:block;">
+      <defs><marker id="ag" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#00ff88"/></marker></defs>
+
+      <rect x="15" y="55" width="165" height="72" rx="14" fill="rgba(255,107,53,.07)" stroke="#ff6b35" stroke-width="1.5"/>
+      <text x="97" y="85" text-anchor="middle" font-size="20">💬</text>
+      <text x="97" y="107" text-anchor="middle" fill="#ff6b35" font-family="IBM Plex Mono" font-size="11">sessão 1</text>
+      <text x="97" y="150" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">"o teste não deve ler</text>
+      <text x="97" y="164" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">o CSV real"</text>
+
+      <line x1="188" y1="91" x2="212" y2="91" stroke="#7fa8c0" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+      <rect x="218" y="55" width="165" height="72" rx="14" fill="rgba(255,107,53,.07)" stroke="#ff6b35" stroke-width="1.5"/>
+      <text x="300" y="85" text-anchor="middle" font-size="20">💬</text>
+      <text x="300" y="107" text-anchor="middle" fill="#ff6b35" font-family="IBM Plex Mono" font-size="11">sessão 2</text>
+      <text x="300" y="150" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">apareceu de novo</text>
+
+      <line x1="391" y1="91" x2="415" y2="91" stroke="#7fa8c0" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+      <rect x="421" y="55" width="165" height="72" rx="14" fill="rgba(255,107,53,.12)" stroke="#ff6b35" stroke-width="2"/>
+      <text x="503" y="85" text-anchor="middle" font-size="20">💬</text>
+      <text x="503" y="107" text-anchor="middle" fill="#ff6b35" font-family="IBM Plex Mono" font-size="11">sessão 3</text>
+      <text x="503" y="150" text-anchor="middle" fill="#ff6b35" font-family="IBM Plex Sans" font-size="10" font-weight="600">de novo. chega.</text>
+
+      <path d="M594,91 L648,91" stroke="#00ff88" stroke-width="2.5" marker-end="url(#ag)"/>
+      <text x="621" y="76" text-anchor="middle" fill="#00ff88" font-family="IBM Plex Mono" font-size="10">promove</text>
+
+      <rect x="660" y="45" width="220" height="92" rx="16" fill="rgba(0,255,136,.09)" stroke="#00ff88" stroke-width="2.5"/>
+      <text x="770" y="80" text-anchor="middle" font-size="22">🪨</text>
+      <text x="770" y="104" text-anchor="middle" fill="#00ff88" font-family="Syne" font-size="13" font-weight="800">AGENTS.md</text>
+      <text x="770" y="124" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="9.5">vira convenção permanente</text>
+
+      <text x="15" y="30" fill="#7fa8c0" font-family="IBM Plex Mono" font-size="10.5" letter-spacing="1.5">SEDIMENTO (handoff, sobrescrito)</text>
+      <text x="660" y="30" fill="#00ff88" font-family="IBM Plex Mono" font-size="10.5" letter-spacing="1.5">ROCHA (versionado)</text>
+    </svg>
+  </div>
+  <div class="bridge">
+    <span style="color:var(--muted);font-size:.92rem;">📏 <strong style="color:var(--text)">A regra em uma frase:</strong> toda vez que você corrigir o agente pela mesma coisa em sessões diferentes, isso vira linha no AGENTS.md. As regras não nascem prontas — elas se <strong style="color:var(--text)">destilam do atrito</strong>. É por isso que a gente não escreveu um AGENTS.md de 300 linhas na aula passada.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 10: O QUE VERSIONAR ─── -->
+<div class="slide" data-title="O Que Versionar">
+<div class="slide-inner slide-scroll">
+  <span class="tag">08 — a pergunta que sempre aparece</span>
+  <h2 class="sec-title">"Então eu <span style="color:var(--cyan)">versiono tudo</span>?"</h2>
+  <p class="lead" style="margin-bottom:18px;">Não. E o motivo não é preguiça nem falta de espaço em disco — é que acumular histórico bruto <strong style="color:var(--text)">piora</strong> o contexto em vez de melhorar.</p>
+  <div class="yn" style="margin-bottom:18px;">
+    <div class="yn-col yn-yes">
+      <h4 style="color:var(--green);">Versiona</h4>
+      <ul>
+        <li><code>AGENTS.md</code> — a convenção do projeto</li>
+        <li><code>.cursor/rules/*.mdc</code> — as regras escopadas</li>
+        <li>ADRs — decisões arquiteturais com justificativa (aula futura)</li>
+        <li><strong>O critério:</strong> é destilado, foi revisado, e vale daqui a três meses</li>
+      </ul>
+    </div>
+    <div class="yn-col yn-no">
+      <h4 style="color:var(--orange);">Não versiona</h4>
+      <ul>
+        <li><code>docs/handoff.md</code> — rascunho, sobrescrito toda sessão</li>
+        <li>Transcrição de chat — ninguém vai reler, nunca</li>
+        <li>Resumo automático que você não leu</li>
+        <li><strong>O critério:</strong> é bruto, é efêmero, e envelhece em dias</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="border-color:rgba(255,107,53,.25);">
+    <b style="font-family:'Syne',sans-serif;font-size:.95rem;color:var(--orange);display:block;margin-bottom:8px;">☠️ Por que versionar tudo é ativamente ruim</b>
+    <span style="color:var(--muted);font-size:.86rem;line-height:1.7;">
+      Um repositório com 40 handoffs antigos vira um arquivo morto que ninguém lê — e que o agente pode acabar carregando sem necessidade, gastando contexto com o estado de uma sessão de março. Pior: informação velha e informação atual têm exatamente a mesma aparência num arquivo markdown. O agente não sabe qual está obsoleta, e vai tratar as duas como verdade.<br><br>
+      <strong style="color:var(--text)">Destilar &gt; acumular.</strong> Sempre.
+    </span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 11: ROTEIRO ─── -->
+<div class="slide" data-title="Roteiro da Aula">
+<div class="slide-inner slide-scroll">
+  <span class="tag">09 — mão na massa</span>
+  <h2 class="sec-title">Roteiro de <span style="color:var(--cyan)">hoje</span></h2>
+  <p class="lead" style="margin-bottom:18px;">45 minutos. Todo mundo no mesmo commit da aula passada — e em chat novo.</p>
+  <div class="step"><div class="step-time">00–03</div><div class="step-body"><b>Alinhamento</b>Confirmamos que todos estão no mesmo ponto. Quem não terminou a aula passada usa a branch de referência.</div></div>
+  <div class="step hl"><div class="step-time">03–13</div><div class="step-body"><b>O experimento</b>Chat novo, pedido do <code>check_duplicatas</code>, sem nenhum handoff. Listamos juntos tudo que ele decidiu diferente do que vocês tinham combinado.</div></div>
+  <div class="step hl"><div class="step-time">13–25</div><div class="step-body"><b>Escrever o handoff e refazer</b>Criamos <code>docs/handoff.md</code> com as cinco seções. Abrimos <em>outro</em> chat novo, carregamos o handoff, repetimos o mesmo pedido. Comparamos os dois resultados lado a lado.</div></div>
+  <div class="step"><div class="step-time">25–35</div><div class="step-body"><b>Curto vs longo prazo</b>Olhamos o que ficou no handoff e decidimos, item por item: isso é sedimento ou já é rocha? O que passar no teste das três vezes sobe pro AGENTS.md agora.</div></div>
+  <div class="step"><div class="step-time">35–43</div><div class="step-body"><b>Fechar o projeto</b>Implementamos o <code>check_tipos</code> usando o fluxo completo: handoff + AGENTS.md + regra escopada. Rodamos <code>dq data/vendas.csv</code> e vemos os três checks funcionando.</div></div>
+  <div class="step"><div class="step-time">43–45</div><div class="step-body"><b>Gerar o handoff final</b>Pedimos ao agente para escrever o handoff da própria sessão. Vocês leem e corrigem — porque ele sempre exagera em alguma coisa.</div></div>
+</div>
+</div>
+
+<!-- ─── 12: PROMPTS ─── -->
+<div class="slide" data-title="Os Prompts de Hoje">
+<div class="slide-inner slide-scroll">
+  <span class="ptag">09 — copie e cole</span>
+  <h2 class="sec-title">Os <span style="color:var(--purple)">prompts</span> que vamos usar</h2>
+  <div class="chat-list">
+    <div class="chat-bubble">
+      <span class="cb-lbl">1 · gerar o handoff — no fim de toda sessão</span>
+      Antes de eu fechar essa sessão: gere <code>docs/handoff.md</code> com as seções <strong>Onde parei</strong>, <strong>Decisões não óbvias</strong>, <strong>O que tentei e não funcionou</strong>, <strong>Próximo passo exato</strong> e <strong>Arquivos relevantes</strong>. Seja específico — nomes de função e de arquivo. <strong>Não repita nada que já esteja no AGENTS.md.</strong>
+    </div>
+    <div class="chat-bubble">
+      <span class="cb-lbl">2 · retomar — no começo de toda sessão</span>
+      Leia <code>@docs/handoff.md</code> e <code>@AGENTS.md</code>. Me diga em três linhas onde paramos e qual é o próximo passo — <strong>antes de escrever qualquer código.</strong>
+    </div>
+    <div class="chat-bubble">
+      <span class="cb-lbl">3 · promoção — a cada duas ou três sessões</span>
+      Compare <code>@docs/handoff.md</code> com <code>@AGENTS.md</code>. Alguma decisão do handoff já se repetiu o suficiente para virar convenção permanente? Liste candidatas com uma justificativa cada. Não edite nada ainda.
+    </div>
+    <div class="chat-bubble">
+      <span class="cb-lbl">4 · higiene de sessão — quando desconfiar</span>
+      Você ainda está seguindo as convenções do AGENTS.md nesta conversa? Liste as que você está aplicando agora.
+    </div>
+  </div>
+  <div class="bridge" style="margin-top:16px;">
+    <span style="color:var(--muted);font-size:.9rem;">💡 Reparem nas duas travas: <strong style="color:var(--text)">"não repita o que já está no AGENTS.md"</strong> evita a duplicação que apodrece, e <strong style="color:var(--text)">"antes de escrever qualquer código"</strong> força uma confirmação antes de agir. Essa segunda é a semente de um assunto que vamos ver depois: human-in-the-loop.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 13: ARMADILHAS ─── -->
+<div class="slide" data-title="Armadilhas">
+<div class="slide-inner">
+  <span class="otag">10 — o que costuma dar errado</span>
+  <h2 class="sec-title">Cinco armadilhas do <span style="color:var(--orange)">handoff</span></h2>
+  <div class="practice-grid" style="margin-bottom:16px;">
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>📔 Virar diário</b><span>Handoff que só cresce, com entradas datadas de todas as sessões. Ele é <em>sobrescrito</em>, não anexado. Se você quer histórico permanente, o lugar é outro.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>📋 Duplicar o AGENTS.md</b><span>O agente adora copiar as convenções pro handoff. Agora você tem duas fontes que vão divergir. Corte na revisão, sem dó.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🚫 Pular a seção do que falhou</b><span>É a mais valiosa e a primeira que o agente esquece de escrever, porque não há vestígio dela no código. Cobre explicitamente.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🤖 Confiar no resumo automático</b><span>Muita ferramenta resume a conversa sozinha quando o contexto enche. Resumo que você não leu é resumo que pode ter jogado fora exatamente o que importava.</span></div>
+  </div>
+  <div class="card" style="border-color:rgba(255,107,53,.28);">
+    <b style="font-family:'Syne',sans-serif;font-size:.95rem;color:var(--orange);display:block;margin-bottom:6px;">🌀 E a quinta: "só mais uma mensagem"</b>
+    <span style="color:var(--muted);font-size:.85rem;line-height:1.6;">A sessão está ruim, você percebe, mas insiste porque recomeçar parece custoso. Gera o handoff, abre chat novo, cola. Custa noventa segundos e devolve a qualidade que você tinha na mensagem cinco.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 14: QUIZ 1 ─── -->
+<div class="slide" data-title="Quiz — Parte 1">
+<div class="slide-inner">
+  <span class="tag">11 — verifique o que aprendeu</span>
+  <h2 class="sec-title" style="margin-bottom:24px;">Quiz <span style="color:var(--cyan)">— parte 1</span></h2>
+  <div class="g2">
+    <div class="card">
+      <div class="quiz-q">1. Por que uma conversa longa fica mais cara e mais lenta?</div>
+      <div class="qopts">
+        <button class="qopt" onclick="ans(this,false,'q1','Não. O modelo não guarda nada entre mensagens — não existe memória acumulada do lado dele.')">Porque o modelo vai guardando cada mensagem na memória dele</button>
+        <button class="qopt" onclick="ans(this,true,'q1','✓ Isso mesmo! O histórico inteiro é reenviado a cada mensagem nova. Na mensagem 40, você está pagando pelas 39 anteriores de novo.')">Porque o histórico inteiro é reenviado a cada nova mensagem</button>
+        <button class="qopt" onclick="ans(this,false,'q1','Não. A cobrança não é por tempo de sessão aberta — é pelo tamanho do pacote enviado a cada requisição.')">Porque a ferramenta cobra por tempo de conversa aberta</button>
+      </div>
+      <div class="qfb" id="q1"></div>
+    </div>
+    <div class="card">
+      <div class="quiz-q">2. Qual destas <strong>não</strong> deveria ir para o handoff?</div>
+      <div class="qopts">
+        <button class="qopt" onclick="ans(this,false,'q2','Não. Essa é exatamente a seção mais valiosa do handoff — o código não guarda registro nenhum dos caminhos abandonados.')">"Tentei ler o CSV no teste e ficou frágil, não repetir"</button>
+        <button class="qopt" onclick="ans(this,true,'q2','✓ Exato! Isso é convenção permanente: já está (ou deveria estar) no AGENTS.md. Duplicar cria duas fontes que vão divergir.')">"Todo check devolve um CheckResult"</button>
+        <button class="qopt" onclick="ans(this,false,'q2','Não. Decisão em aberto é justamente o tipo de coisa que evapora com a sessão e que o agente resolveria sozinho na sua ausência.')">"Ainda não decidimos como o usuário informa o tipo esperado"</button>
+      </div>
+      <div class="qfb" id="q2"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 15: QUIZ 2 ─── -->
+<div class="slide" data-title="Quiz — Parte 2">
+<div class="slide-inner">
+  <span class="tag">11 — verifique o que aprendeu</span>
+  <h2 class="sec-title" style="margin-bottom:24px;">Quiz <span style="color:var(--cyan)">— parte 2</span></h2>
+  <div class="g2">
+    <div class="card">
+      <div class="quiz-q">3. Por que <strong>não</strong> versionar o <code>handoff.md</code>?</div>
+      <div class="qopts">
+        <button class="qopt" onclick="ans(this,false,'q3','Não. O tamanho do arquivo é irrelevante — um handoff tem meia página. O problema é outro.')">Porque ele ocupa muito espaço no repositório</button>
+        <button class="qopt" onclick="ans(this,true,'q3','✓ Isso mesmo! Handoff é rascunho efêmero. Acumular dezenas deles cria um arquivo morto onde informação obsoleta e informação atual têm exatamente a mesma cara — e o agente não distingue as duas.')">Porque é rascunho efêmero e histórico acumulado envenena o contexto</button>
+        <button class="qopt" onclick="ans(this,false,'q3','Não. O git lida bem com markdown. A questão não é técnica, é de qualidade de contexto.')">Porque o git não lida bem com arquivos markdown</button>
+      </div>
+      <div class="qfb" id="q3"></div>
+    </div>
+    <div class="card">
+      <div class="quiz-q">4. O agente violou uma regra que seguia bem no início da conversa. O que fazer?</div>
+      <div class="qopts">
+        <button class="qopt" onclick="ans(this,false,'q4','Não. Repetir a regra numa conversa já degradada adiciona mais contexto ao problema — costuma funcionar uma vez e voltar a falhar logo depois.')">Repetir a regra no chat e continuar a mesma conversa</button>
+        <button class="qopt" onclick="ans(this,true,'q4','✓ Exato! É sinal clássico de sessão degradada. Gerar o handoff e recomeçar devolve a qualidade — e custa noventa segundos.')">Gerar o handoff, abrir chat novo e retomar de lá</button>
+        <button class="qopt" onclick="ans(this,false,'q4','Não. Aumentar a regra trata o sintoma errado: o problema não é a regra estar mal escrita, é a janela estar saturada.')">Aumentar a regra no AGENTS.md com mais detalhes</button>
+      </div>
+      <div class="qfb" id="q4"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 16: FECHAMENTO ─── -->
+<div class="slide" data-title="O Que Vocês Levam">
+<div class="slide-inner" style="text-align:center;">
+  <div style="font-size:2.8rem;margin-bottom:16px;">🧭</div>
+  <span class="gtag" style="justify-content:center;display:flex;">fechamento do projeto</span>
+  <h2 class="sec-title" style="margin-bottom:18px;">Vocês não construíram um <span style="color:var(--green)">validador de CSV</span></h2>
+  <p class="lead" style="max-width:700px;margin:0 auto 22px;">Construíram um método. O <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">dq</code> tem trezentas linhas e vocês nunca mais vão usar. O que sobra é o que funciona em qualquer repositório que vocês tocarem daqui pra frente:</p>
+  <div style="max-width:760px;margin:0 auto 24px;text-align:left;">
+    <div class="hsec"><div class="ht" style="margin-bottom:2px;">📜 O repositório se explica sozinho</div><div class="hd">AGENTS.md para convenção, .mdc para escopo. O contexto saiu da sua cabeça e virou código revisável.</div></div>
+    <div class="hsec"><div class="ht" style="margin-bottom:2px;">📋 A sessão tem começo e fim explícitos</div><div class="hd">Handoff ao fechar, handoff ao abrir. Você nunca mais recomeça do zero nem insiste numa conversa apodrecida.</div></div>
+    <div class="hsec"><div class="ht" style="margin-bottom:2px;">📈 As regras se destilam do atrito</div><div class="hd">Corrigiu três vezes, promove. Você não escreve convenção de antemão — você colhe a que já provou ser necessária.</div></div>
+  </div>
+  <div class="hero-q" style="max-width:700px;margin:0 auto 26px;">
+    💭 E ficou uma pergunta em aberto: hoje vocês registraram <em>o que</em> decidiram. Mas <strong style="color:var(--text);font-style:normal;">o porquê</strong> de cada decisão ainda não tem lugar fixo. Guardem essa — é o próximo assunto.
+  </div>
+  <span class="tag" style="justify-content:center;display:flex;">o que vem por aí</span>
+  <div class="next-pills" style="max-width:760px;margin:0 auto;">
+    <span class="next-pill">ADR</span>
+    <span class="next-pill">Context Rot</span>
+    <span class="next-pill">SDD</span>
+    <span class="next-pill">Skills</span>
+    <span class="next-pill">Human-in-the-loop</span>
+    <span class="next-pill">Agent Loop</span>
+    <span class="next-pill">Subagents</span>
+    <span class="next-pill">Evals</span>
+  </div>
+</div>
+</div>
+
+</div><!-- /slides -->
+
+<script>
+// ══════════════════════════ BG CANVAS ══════════════════════════
+const bgCanvas = document.getElementById('bg');
+const bgCtx = bgCanvas.getContext('2d');
+let BW, BH, nodes = [];
+function resizeBg() { BW = bgCanvas.width = window.innerWidth; BH = bgCanvas.height = window.innerHeight; }
+resizeBg(); window.addEventListener('resize', () => { resizeBg(); initNodes(); });
+function initNodes() {
+  nodes = [];
+  const n = Math.floor((BW * BH) / 18000);
+  for (let i = 0; i < n; i++) nodes.push({ x:Math.random()*BW, y:Math.random()*BH, vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4, r:Math.random()*2+1 });
+}
+initNodes();
+function drawBg() {
+  bgCtx.clearRect(0, 0, BW, BH);
+  nodes.forEach(n => { n.x += n.vx; n.y += n.vy; if(n.x<0||n.x>BW)n.vx*=-1; if(n.y<0||n.y>BH)n.vy*=-1; });
+  for (let i = 0; i < nodes.length; i++) for (let j = i+1; j < nodes.length; j++) {
+    const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, d=Math.sqrt(dx*dx+dy*dy);
+    if (d < 120) { bgCtx.beginPath(); bgCtx.moveTo(nodes[i].x,nodes[i].y); bgCtx.lineTo(nodes[j].x,nodes[j].y); bgCtx.strokeStyle=`rgba(124,58,237,${.15*(1-d/120)})`; bgCtx.lineWidth=.5; bgCtx.stroke(); }
+  }
+  nodes.forEach(n => { bgCtx.beginPath(); bgCtx.arc(n.x,n.y,n.r,0,Math.PI*2); bgCtx.fillStyle='rgba(0,229,255,.5)'; bgCtx.fill(); });
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+// ══════════════════════════ SLIDE ENGINE ══════════════════════════
+const slideEls = Array.from(document.querySelectorAll('.slide'));
+const TOTAL = slideEls.length;
+let current = 0;
+
+const progressBar = document.getElementById('progress-bar');
+const counter     = document.getElementById('slide-counter');
+const titleBar    = document.getElementById('slide-title-bar');
+const navPrev     = document.getElementById('nav-prev');
+const navNext     = document.getElementById('nav-next');
+const dotsEl      = document.getElementById('dots');
+
+slideEls.forEach((_, i) => {
+  const d = document.createElement('div'); d.className = 'dot'; d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(n) {
+  if (n < 0 || n >= TOTAL) return;
+  slideEls.forEach((s, i) => {
+    s.classList.remove('active', 'prev');
+    if (i < n) s.classList.add('prev');
+  });
+  slideEls[n].classList.add('active');
+  current = n;
+  updateUI();
+  onSlideEnter(current);
+}
+
+function updateUI() {
+  progressBar.style.width = ((current + 1) / TOTAL * 100) + '%';
+  counter.textContent = `${current + 1} / ${TOTAL}`;
+  titleBar.textContent = slideEls[current].dataset.title || '';
+  navPrev.classList.toggle('disabled', current === 0);
+  navNext.classList.toggle('disabled', current === TOTAL - 1);
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i === current));
+}
+
+navPrev.onclick = () => goTo(current - 1);
+navNext.onclick = () => goTo(current + 1);
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
+});
+requestAnimationFrame(() => goTo(0));
+
+function onSlideEnter(n) {
+  if (slideEls[n].dataset.title === 'Anatomia da Janela') setCtx(ctxCurrent);
+}
+
+// ══════════════════════════ CONTEXT BAR ══════════════════════════
+let ctxCurrent = 'a';
+const ctxData = {
+  a: {
+    seg: { sys:9, rul:7, fil:11, his:3, you:4 },
+    note: '<strong style="color:var(--green)">Confortável.</strong> As regras estão carregadas, ele leu os arquivos que precisava, e ainda sobra bastante espaço. Sua pergunta tem lugar de sobra para ser processada com atenção. É aqui que as respostas são melhores.'
+  },
+  b: {
+    seg: { sys:9, rul:7, fil:19, his:31, you:4 },
+    note: '<strong style="color:var(--cyan)">Ainda funciona, mas repare no roxo.</strong> O histórico já é a maior fatia — e ele cresce sozinho, sem você fazer nada. Cada resposta do agente vira contexto permanente da conversa. Bom momento para pensar em fechar a tarefa.'
+  },
+  c: {
+    seg: { sys:9, rul:7, fil:23, his:54, you:4 },
+    note: '<strong style="color:var(--orange)">Degradado.</strong> O histórico devorou a janela. Sua pergunta continua do mesmo tamanho, mas agora ela é uma agulha num palheiro de contexto antigo e irrelevante — e a atenção do modelo se dilui nele. É aqui que ele reescreve funções que já existem e volta a violar regras. <strong style="color:var(--text)">A saída não é insistir: é gerar o handoff e recomeçar.</strong>'
+  }
+};
+
+function setCtx(key) {
+  ctxCurrent = key;
+  ['a','b','c'].forEach(k => document.getElementById('c-'+k).classList.toggle('on', k === key));
+  const d = ctxData[key];
+  const used = d.seg.sys + d.seg.rul + d.seg.fil + d.seg.his + d.seg.you;
+  const map = { sys:'s-sys', rul:'s-rul', fil:'s-fil', his:'s-his', you:'s-you' };
+  Object.keys(map).forEach(k => {
+    const el = document.getElementById(map[k]);
+    el.style.width = d.seg[k] + '%';
+    el.textContent = d.seg[k] >= 8 ? d.seg[k] + '%' : '';
+  });
+  document.getElementById('s-fre').style.width = (100 - used) + '%';
+  document.getElementById('ctx-note').innerHTML = d.note;
+}
+
+// ══════════════════════════ QUIZ ══════════════════════════
+function ans(btn, ok, id, msg) {
+  const card = btn.closest('.card'); if(card.dataset.done) return;
+  card.dataset.done=1; card.querySelectorAll('.qopt').forEach(b=>b.style.pointerEvents='none');
+  btn.classList.add(ok?'correct':'wrong');
+  const fb=document.getElementById(id); fb.innerHTML=msg; fb.className='qfb show '+(ok?'cfb':'wfb');
+}
+</script>
+</body>
+</html>
