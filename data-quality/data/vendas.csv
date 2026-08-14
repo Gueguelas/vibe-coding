@@ -1,0 +1,72 @@
+id_venda,data_venda,cliente,produto,categoria,quantidade,preco_unitario,regiao,vendedor
+V0001,2025-01-06,Marina Alves,Notebook Pro 14,Eletrônicos,1,4899.00,Sudeste,Ana Costa
+V0002,2025-01-07,Rafael Pinto,Mouse sem fio,Eletrônicos,3,129.90,Sul,Bruno Lima
+V0003,2025-01-08,,Teclado mecânico,Eletrônicos,2,349.50,Nordeste,Carla Dias
+V0004,2025-01-09,Juliana Rocha,Monitor 27 polegadas,Eletrônicos,1,1799.00,Sudeste,Ana Costa
+V0005,09/01/2025,Pedro Henrique,Cadeira ergonômica,Móveis,1,1250.00,Sul,Diego Souza
+V0006,2025-01-13,Camila Freitas,Fone bluetooth,Eletrônicos,2,289.90,Centro-Oeste,Elisa Nunes
+V0007,2025-01-14,Thiago Barbosa,Hub USB-C,Acessórios,4,89.90,Sudeste,Bruno Lima
+V0008,2025-01-15,Larissa Gomes,Mesa ajustável,Móveis,1,2190.00,Sul,Diego Souza
+V0009,2025-01-16,Fernando Dias,Webcam HD,Eletrônicos,2,459.00,Norte,Carla Dias
+V0010,2025-01-17,Patrícia Moura,Suporte para notebook,Acessórios,3,119.00,Nordeste,Elisa Nunes
+V0011,2025-01-20,Gustavo Ramos,Notebook Pro 14,Eletrônicos,1,4899.00,Sudeste,Ana Costa
+V0012,2025-01-21,Beatriz Campos,Luminária LED,Móveis,2,179.90,,Bruno Lima
+V0013,2025-01-22,Ricardo Teles,Mochila executiva,Acessórios,1,329.00,Sul,Diego Souza
+V0014,2025-01-23,Sofia Mendes,Monitor 27 polegadas,Eletrônicos,1,"R$ 1.234,56",Sudeste,Ana Costa
+V0015,2025-01-24,André Lopes,Mouse sem fio,Eletrônicos,5,129.90,Centro-Oeste,Elisa Nunes
+V0016,2025-01-27,Helena Braga,Teclado mecânico,Eletrônicos,2,349.50,Nordeste,Carla Dias
+V0017,2025-01-28,Vinícius Sales,Cadeira ergonômica,Móveis,2,1250.00,Sul,Diego Souza
+V0018,28/01/2025,Renata Aguiar,Fone bluetooth,Eletrônicos,1,289.90,Norte,Bruno Lima
+V0019,2025-01-30,,Hub USB-C,Acessórios,2,89.90,Sudeste,Ana Costa
+V0020,2025-01-31,Marcelo Vieira,Mesa ajustável,Móveis,1,2190.00,Centro-Oeste,Elisa Nunes
+V0021,2025-02-03,Aline Cardoso,Webcam HD,Eletrônicos,dois,459.00,Sul,Carla Dias
+V0022,2025-02-04,Bruno Tavares,Notebook Pro 14,eletrônicos,1,4899.00,Sudeste,Ana Costa
+V0023,2025-02-05,Cristina Paiva,Suporte para notebook,Acessórios,2,119.00,Nordeste,Diego Souza
+V0024,2025-02-06,Diego Amaral,Luminária LED,Móveis,3,179.90,Norte,Elisa Nunes
+V0025,2025-02-07,Elaine Castro,Mochila executiva,Acessórios,1,329.00,Sul,
+V0026,2025-02-10,Felipe Nogueira,Cadeira ergonômica,Moveis,1,1250.00,Sudeste,Bruno Lima
+V0027,2025-02-11,Gabriela Pires,Monitor 27 polegadas,Eletrônicos,2,N/A,Centro-Oeste,Ana Costa
+V0028,2025-02-12,Henrique Duarte,Mouse sem fio,Eletrônicos,4,129.90,Sul,Carla Dias
+V0007,2025-01-14,Thiago Barbosa,Hub USB-C,Acessórios,4,89.90,Sudeste,Bruno Lima
+V0029,13/02/2025,Isabela Fonseca,Teclado mecânico,Eletrônicos,1,349.50,Nordeste,Diego Souza
+V0030,2025-02-14,,Fone bluetooth,Eletrônicos,3,289.90,Norte,Elisa Nunes
+V0031,2025-02-17,João Pedro Reis,Notebook Pro 14,Eletrônicos,1,4899.00,Sudeste,Ana Costa
+V0032,2025-02-18,Karina Bueno,Mesa ajustável,Móveis,1,2190.00,Sul,Bruno Lima
+V0033,2025-02-19,Lucas Andrade,Webcam HD,Eletrônicos,2,459.00,Centro-Oeste,Carla Dias
+V0034,2025-02-20,Mariana Cunha,Hub USB-C,Acessórios,-2,89.90,Nordeste,Diego Souza
+V0035,2025-02-21,Nathalia Prado,Luminária LED, Eletrônicos,2,179.90,Norte,Elisa Nunes
+V0036,2025-02-24,Otávio Lemos,Suporte para notebook,Acessórios,3,119.00,Sudeste,Ana Costa
+V0037,2025-02-25,Paula Rezende,Mochila executiva,Acessórios,1,329.00,Sul,Bruno Lima
+V0038,2025-02-26,Quésia Martins,Cadeira ergonômica,Móveis,2,,Centro-Oeste,Carla Dias
+V0039,2025-02-27,Rodrigo Farias,Monitor 27 polegadas,Eletrônicos,1,1799.00,,Diego Souza
+V0040,28/02/2025,Simone Baptista,Mouse sem fio,Eletrônicos,6,129.90,Norte,Elisa Nunes
+V0041,2025-03-03,Tiago Menezes,Notebook Pro 14,Eletrônicos,1,4899.00,Sudeste,Ana Costa
+V0042,2025-03-04,,Teclado mecânico,Eletrônicos,2,349.50,Sul,Bruno Lima
+V0043,2025-03-05,Vanessa Correia,Fone bluetooth,Eletrônicos,1,289.90,Nordeste,Carla Dias
+V0044,2025-03-06,William Peixoto,Mesa ajustável,Móveis,1,2190.00,Centro-Oeste,Diego Souza
+V0045,2025-03-07,Yasmin Coelho,Webcam HD,Eletrônicos,"3,0",459.00,Norte,Elisa Nunes
+V0016,2025-01-27,Helena Braga,Teclado mecânico,Eletrônicos,2,349.50,Nordeste,Carla Dias
+V0046,2025-03-10,Zeca Monteiro,Hub USB-C,ELETRÔNICOS,2,89.90,Sudeste,Ana Costa
+V0047,2025-03-11,Amanda Siqueira,Luminária LED,Móveis,4,179.90,Sul,
+V0048,2025-03-12,Bernardo Fialho,Suporte para notebook,Acessórios,2,119.00,Nordeste,Carla Dias
+V0049,2025-03-13,Carolina Xavier,Monitor 27 polegadas,Eletrônicos,1,"1.799,00",Centro-Oeste,Diego Souza
+V0050,2025-03-14,Daniel Ferraz,Mochila executiva,Acessórios,1,329.00,Norte,Elisa Nunes
+V0051,2025-03-17,Eduarda Bastos,Cadeira ergonômica,Móveis,1,1250.00,Sudeste,Ana Costa
+V0052,,Fábio Quintana,Mouse sem fio,Eletrônicos,3,129.90,Sul,Bruno Lima
+V0053,2025-03-19,,Notebook Pro 14,Eletrônicos,1,4899.00,Nordeste,Carla Dias
+V0054,2025-03-20,Gisele Nunes,Teclado mecânico,Eletrônicos,,349.50,Centro-Oeste,Diego Souza
+V0055,2025-03-21,Heitor Balbino,Fone bluetooth,Eletrônicos,2,289.90,Norte,Elisa Nunes
+V0056,2025-03-24,Ingrid Sampaio,Mesa ajustável,Móveis,1,2190.00,,Ana Costa
+V0057,2025-03-25,Jonas Vilela,Webcam HD,Eletrônicos,2,459.00,Sul,Bruno Lima
+V0033,2025-02-19,Lucas Andrade,Webcam HD,Eletrônicos,2,459.00,Centro-Oeste,Carla Dias
+V0058,26/03/2025,Kelly Antunes,Hub USB-C,Acessórios,5,89.90,Nordeste,Diego Souza
+V0059,2025-03-27,Leandro Bittar,Luminária LED,Móveis,2,179.90,Sudeste,Elisa Nunes
+V0060,2025-03-28,Melissa Furtado,Suporte para notebook,Acessórios,3,119.00,Norte,Ana Costa
+V0061,2025-03-31,Norberto Salles,Mochila executiva,Acessórios,1,329.00,Sul,Bruno Lima
+V0062,2025-04-01,Olívia Tavares,Notebook Pro 14,Eletrônicos,1,48990.00,Sudeste,Carla Dias
+V0063,2025-04-02,Paulo Sérgio Maia,Cadeira ergonômica,Móveis,2,1250.00,Nordeste,Diego Souza
+V0064,2025-04-03,Roberta Guedes,Monitor 27 polegadas,Eletrônicos,1,1799.00,Centro-Oeste,Elisa Nunes
+V0065,2025-04-04,Sandro Vasques,Mouse sem fio,Eletrônicos,2,129.90,Norte,Ana Costa
+V0066,2025-04-07,Tatiana Borges,Teclado mecânico,Eletrônicos,3,349.50,Sudeste,Bruno Lima
+V0067,2025-04-08,Ulisses Prado,Fone bluetooth,Eletrônicos,1,289.90,Sul,Carla Dias
+V0068,2025-04-09,Viviane Rangel,Mesa ajustável,Móveis,1,2190.00,Nordeste,Diego Souza

@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula 2 — Agent Rules &amp; Context Engineering</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050a14;
+  --cyan: #00e5ff;
+  --green: #00ff88;
+  --orange: #ff6b35;
+  --purple: #7c3aed;
+  --pink: #f472b6;
+  --text: #e8f4f8;
+  --muted: #7fa8c0;
+  --card: rgba(255,255,255,0.04);
+  --border: rgba(0,229,255,0.15);
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif; }
+
+#bg { position:fixed; inset:0; z-index:0; opacity:.3; pointer-events:none; }
+
+#progress-bar {
+  position:fixed; top:0; left:0; height:3px; z-index:200;
+  background:linear-gradient(90deg, var(--cyan), var(--purple));
+  transition: width .4s ease;
+}
+
+#topbar {
+  position:fixed; top:0; left:0; right:0; height:52px; z-index:150;
+  background:rgba(5,10,20,.88); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; padding:0 32px;
+}
+.tb-label { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--cyan); letter-spacing:2px; text-transform:uppercase; }
+.tb-counter { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--muted); }
+.tb-title { font-family:'IBM Plex Sans',sans-serif; font-size:13px; color:var(--muted); max-width:360px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+#slides { position:fixed; inset:0; z-index:1; }
+
+.slide {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; justify-content:flex-start; align-items:center;
+  padding:72px 60px 80px;
+  opacity:0; pointer-events:none;
+  transition: opacity .5s ease, transform .5s ease;
+  transform: translateX(60px);
+  overflow-y: auto;
+}
+.slide.active { opacity:1; pointer-events:all; transform:translateX(0); }
+.slide.prev   { opacity:0; pointer-events:none; transform:translateX(-60px); }
+.slide-inner { width:100%; max-width:1060px; margin:auto 0; }
+
+#nav-prev, #nav-next {
+  position:fixed; top:50%; z-index:200;
+  transform:translateY(-50%);
+  width:48px; height:48px; border-radius:50%;
+  border:1px solid var(--border); background:rgba(5,10,20,.7);
+  backdrop-filter:blur(8px); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; color:var(--cyan);
+  transition:all .2s; user-select:none;
+}
+#nav-prev { left:16px; }
+#nav-next { right:16px; }
+#nav-prev:hover, #nav-next:hover { background:rgba(0,229,255,.12); border-color:var(--cyan); }
+#nav-prev.disabled, #nav-next.disabled { opacity:.25; pointer-events:none; }
+
+#dots { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); display:flex; gap:7px; z-index:200; }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--muted); opacity:.4; cursor:pointer; transition:all .3s; }
+.dot.active { background:var(--cyan); opacity:1; transform:scale(1.3); }
+
+.tag  { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--cyan);   letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; display:block; }
+.gtag { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--green);  letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; display:block; }
+.ptag { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--purple); letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; display:block; }
+.otag { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--orange); letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; display:block; }
+
+h1.hero-title { font-family:'Syne',sans-serif; font-size:clamp(2.2rem,4.6vw,4.2rem); font-weight:800; line-height:1.05; margin-bottom:20px; }
+h2.sec-title  { font-family:'Syne',sans-serif; font-size:clamp(1.5rem,3.3vw,2.5rem); font-weight:800; line-height:1.15; margin-bottom:12px; }
+h3.slide-h3   { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:700; margin-bottom:16px; }
+p.lead { color:var(--muted); font-size:1rem; line-height:1.7; margin-bottom:24px; }
+
+.badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(0,229,255,.08); border:1px solid var(--border);
+  border-radius:20px; padding:6px 16px;
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--cyan); letter-spacing:1px;
+  margin-bottom:28px; width:fit-content;
+}
+.badge::before { content:''; width:7px; height:7px; background:var(--green); border-radius:50%; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
+
+.hero-q {
+  background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(124,58,237,.06));
+  border:1px solid rgba(0,229,255,.2); border-left:4px solid var(--cyan);
+  border-radius:12px; padding:22px 28px; font-size:1.1rem; font-style:italic; color:var(--text);
+  max-width:740px; margin-top:8px;
+  animation:fadeUp .8s ease both .3s;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+.card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+@media(max-width:680px){.g2,.g3{grid-template-columns:1fr}}
+
+.pill-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; }
+.pill { background:rgba(0,255,136,.07); border:1px solid rgba(0,255,136,.25); border-radius:20px; padding:5px 14px; font-size:12px; color:var(--green); font-family:'IBM Plex Mono',monospace; }
+
+.vs-wrap { display:grid; grid-template-columns:1fr 56px 1fr; gap:0; align-items:stretch; margin-bottom:20px; }
+@media(max-width:680px){.vs-wrap{grid-template-columns:1fr}.vs-sep{display:none}}
+.vs-col { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:10px; }
+.vs-col.ml { border-color:rgba(255,107,53,.25); }
+.vs-col.rn { border-color:rgba(0,229,255,.25); }
+.vs-col-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.vs-sep { display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; color:var(--muted); }
+.vs-item { display:flex; gap:8px; align-items:flex-start; padding:9px 12px; border-radius:8px; background:rgba(0,0,0,.25); font-size:.83rem; line-height:1.5; }
+.vs-item .vt { color:var(--muted); }
+.vs-item .vt strong { color:var(--text); display:block; margin-bottom:1px; }
+.vs-limit { border:1px solid rgba(255,107,53,.2)!important; background:rgba(255,107,53,.04)!important; }
+.vs-strength { border:1px solid rgba(0,229,255,.15)!important; background:rgba(0,229,255,.03)!important; }
+
+.bridge { background:linear-gradient(135deg,rgba(0,229,255,.05),rgba(124,58,237,.05)); border:1px solid rgba(0,229,255,.2); border-radius:14px; padding:24px 28px; }
+
+
+.slide-scroll { overflow-y:auto; max-height:calc(100vh - 140px); padding-right:8px; }
+.slide-scroll::-webkit-scrollbar { width:4px; }
+.slide-scroll::-webkit-scrollbar-thumb { background:rgba(0,229,255,.2); border-radius:2px; }
+
+.flow-line { stroke-dasharray:7 5; animation:dashmove 1.1s linear infinite; }
+@keyframes dashmove { to { stroke-dashoffset:-24; } }
+
+.practice-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+@media(max-width:680px){ .practice-grid{ grid-template-columns:1fr; } }
+.practice-card { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--cyan); border-radius:12px; padding:16px 18px; transition:.2s; }
+.practice-card:hover { border-color:var(--cyan); background:rgba(0,229,255,.04); }
+.practice-card b { display:block; font-family:'Syne',sans-serif; font-size:.92rem; margin-bottom:4px; }
+.practice-card span { color:var(--muted); font-size:.81rem; line-height:1.5; }
+
+.chat-list { display:flex; flex-direction:column; gap:10px; }
+.chat-bubble { background:var(--card); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:13px 18px; font-size:.88rem; color:var(--text); transition:.2s; }
+.chat-bubble:hover { border-color:var(--purple); background:rgba(124,58,237,.06); transform:translateX(4px); }
+.chat-bubble .cb-lbl { display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--purple); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+
+.next-pills { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.next-pill { font-family:'IBM Plex Mono',monospace; font-size:12px; padding:8px 16px; border-radius:20px; background:rgba(124,58,237,.08); border:1px solid rgba(124,58,237,.3); color:var(--pink); }
+
+.quote-box { background:rgba(0,0,0,.3); border-left:4px solid var(--purple); border-radius:10px; padding:18px 22px; font-style:italic; color:var(--text); font-size:.95rem; line-height:1.65; }
+
+/* ═══ NOVOS COMPONENTES — AULA 2 ═══ */
+
+.code {
+  background:rgba(0,0,0,.42); border:1px solid var(--border); border-radius:10px;
+  padding:14px 18px; font-family:'IBM Plex Mono',monospace; font-size:.76rem;
+  line-height:1.75; overflow-x:auto; white-space:pre; color:#bfe4f2;
+}
+.code .k { color:var(--pink); }
+.code .s { color:var(--green); }
+.code .c { color:var(--muted); font-style:italic; }
+.code .h { color:var(--cyan); font-weight:500; }
+.code .o { color:var(--orange); }
+
+.tbl { width:100%; border-collapse:collapse; font-size:.84rem; }
+.tbl th { text-align:left; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--cyan); padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; }
+.tbl td { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.05); color:var(--muted); vertical-align:top; line-height:1.55; }
+.tbl td strong { color:var(--text); }
+.tbl tbody tr:hover td { background:rgba(0,229,255,.03); }
+
+.mode-sel { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+@media(max-width:780px){ .mode-sel{ grid-template-columns:1fr 1fr; } }
+.msel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 12px; cursor:pointer; text-align:center; transition:all .2s; }
+.msel:hover { border-color:var(--purple); background:rgba(124,58,237,.05); }
+.msel.sel { border-color:var(--purple); background:rgba(124,58,237,.1); }
+.msel .mi { font-size:1.4rem; margin-bottom:5px; }
+.msel .mt { font-family:'Syne',sans-serif; font-weight:700; font-size:.78rem; }
+#mode-detail { display:none; border-radius:14px; border:1px solid var(--border); padding:20px 24px; background:rgba(124,58,237,.04); }
+#mode-detail.show { display:block; }
+
+.dialect-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+@media(max-width:780px){ .dialect-grid{ grid-template-columns:1fr; } }
+.dialect { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; transition:.25s; }
+.dialect:hover { transform:translateY(-5px); }
+.dialect .dfile { font-family:'IBM Plex Mono',monospace; font-size:.82rem; font-weight:500; margin-bottom:8px; word-break:break-all; }
+.dialect .dwho { font-size:.75rem; color:var(--muted); margin-bottom:10px; }
+.dialect .ddesc { font-size:.8rem; color:var(--muted); line-height:1.6; }
+
+.step { display:flex; gap:14px; align-items:flex-start; padding:11px 15px; background:var(--card); border:1px solid var(--border); border-left:3px solid var(--cyan); border-radius:10px; margin-bottom:9px; }
+.step-time { flex-shrink:0; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--cyan); background:rgba(0,229,255,.08); border-radius:6px; padding:5px 9px; min-width:62px; text-align:center; }
+.step-body { font-size:.84rem; line-height:1.55; color:var(--muted); }
+.step-body b { color:var(--text); display:block; margin-bottom:2px; font-family:'Syne',sans-serif; font-size:.88rem; }
+.step.hl { border-left-color:var(--orange); }
+.step.hl .step-time { color:var(--orange); background:rgba(255,107,53,.1); }
+
+/* ═══ TUTORIAL EM PASSOS (acordeão) ═══ */
+.tut { display:grid; gap:11px; }
+.tut-case { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color .2s; }
+.tut-case:hover { border-color:rgba(0,229,255,.35); }
+.tut-case.open { border-color:var(--cyan); }
+.tut-head { display:flex; align-items:center; gap:14px; padding:13px 18px; cursor:pointer; user-select:none; }
+.tut-badge { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1px; padding:4px 9px; border-radius:5px; white-space:nowrap; background:rgba(0,229,255,.12); color:var(--cyan); font-weight:500; }
+.tut-badge.mk { background:rgba(124,58,237,.16); color:#c4b5fd; }
+.tut-badge.mv { background:rgba(0,255,136,.12); color:var(--green); }
+.tut-q { flex:1; font-family:'Syne',sans-serif; font-weight:700; font-size:.9rem; color:var(--text); }
+.tut-mode { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1px; color:var(--muted); border:1px solid var(--border); border-radius:20px; padding:3px 9px; white-space:nowrap; }
+.tut-tog { color:var(--muted); font-size:.72rem; transition:transform .2s; }
+.tut-body { display:none; padding:0 18px 18px; }
+.tut-body.open { display:block; }
+.tut-body p { color:var(--muted); font-size:.85rem; line-height:1.65; margin-bottom:12px; }
+.tut-body p strong { color:var(--text); }
+
+.code-wrap { border:1px solid var(--border); border-radius:9px; overflow:hidden; margin-bottom:12px; }
+.code-header { display:flex; justify-content:space-between; align-items:center; padding:7px 14px; background:rgba(0,0,0,.55); border-bottom:1px solid var(--border); }
+.code-header .fname { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--cyan); }
+.code-header .lbadge { font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.code-wrap .code { border:none; border-radius:0; }
+
+.callout { border-left:3px solid; border-radius:0 8px 8px 0; padding:12px 16px; margin:12px 0 0; font-size:.83rem; line-height:1.6; }
+.callout .ct { font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:9.5px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:5px; }
+.callout p { margin:0; color:var(--muted); font-size:.83rem; }
+.co-ok   { border-color:var(--green);  background:rgba(0,255,136,.05); }
+.co-ok .ct { color:var(--green); }
+.co-warn { border-color:var(--orange); background:rgba(255,107,53,.05); }
+.co-warn .ct { color:var(--orange); }
+.co-info { border-color:var(--purple); background:rgba(124,58,237,.06); }
+.co-info .ct { color:#c4b5fd; }
+
+/* ═══ MODOS DO CURSOR ═══ */
+.cm-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+@media(max-width:780px){ .cm-grid{ grid-template-columns:1fr; } }
+.cm { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; border-top:3px solid; transition:.25s; }
+.cm:hover { transform:translateY(-4px); }
+.cm-top { display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+.cm-name { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; }
+.cm-kbd { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--muted); border:1px solid var(--border); border-radius:5px; padding:2px 7px; }
+.cm-desc { color:var(--muted); font-size:.82rem; line-height:1.6; margin-bottom:9px; }
+.cm-use { font-size:.79rem; line-height:1.55; color:var(--text); background:rgba(0,0,0,.28); border-radius:7px; padding:8px 11px; }
+.cm-use b { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1px; display:block; margin-bottom:3px; color:var(--muted); text-transform:uppercase; }
+
+.yn { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:680px){ .yn{ grid-template-columns:1fr; } }
+.yn-col { border-radius:14px; padding:18px 20px; }
+.yn-yes { background:rgba(0,255,136,.05); border:1px solid rgba(0,255,136,.22); }
+.yn-no  { background:rgba(255,107,53,.05); border:1px solid rgba(255,107,53,.22); }
+.yn-col h4 { font-family:'Syne',sans-serif; font-size:.95rem; margin-bottom:12px; }
+.yn-col li { list-style:none; font-size:.83rem; color:var(--muted); line-height:1.55; padding:6px 0 6px 20px; position:relative; }
+.yn-yes li::before { content:'✓'; position:absolute; left:0; color:var(--green); }
+.yn-no  li::before { content:'✕'; position:absolute; left:0; color:var(--orange); }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div id="progress-bar"></div>
+
+<div id="topbar">
+  <span class="tb-label">⬡ Aula 02 — Agent Rules</span>
+  <span class="tb-title" id="slide-title-bar"></span>
+  <span class="tb-counter" id="slide-counter"></span>
+</div>
+
+<div id="nav-prev">←</div>
+<div id="nav-next">→</div>
+<div id="dots"></div>
+
+<div id="slides">
+
+<!-- ─── 0: HERO ─── -->
+<div class="slide active" data-title="Abertura">
+<div class="slide-inner">
+  <div class="badge">AGENT RULES &amp; CONTEXT ENGINEERING · AULA 2</div>
+  <h1 class="hero-title">O agente não<br>te <span style="color:var(--orange)">conhece</span>.<br>E nunca vai.</h1>
+  <p class="lead" style="max-width:640px;">Na aula passada você viu que a IA só sabe o que você conta. Hoje a gente para de contar na mão — e faz o repositório se explicar sozinho, toda vez, sem você digitar nada.</p>
+  <div class="hero-q">💭 "Se toda conversa nova começa do zero, quem é que devia guardar o que o projeto já decidiu?"</div>
+  <div class="pill-row" style="margin-top:24px;">
+    <div class="pill">🎛️ Modos do Cursor</div>
+    <div class="pill">🧠 Context engineering</div>
+    <div class="pill">📜 Agent rules</div>
+    <div class="pill">📄 AGENTS.md</div>
+    <div class="pill">⚙️ .mdc e frontmatter</div>
+    <div class="pill">🛠️ Projeto: dq</div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 1: A DOR ─── -->
+<div class="slide" data-title="O Agente Amnésico">
+<div class="slide-inner">
+  <span class="otag">01 — a dor que a gente vai resolver</span>
+  <h2 class="sec-title">Todo dia é o <span style="color:var(--orange)">primeiro dia</span> dele</h2>
+  <p class="lead" style="margin-bottom:20px;">Imagine contratar alguém brilhante, que resolve qualquer problema — mas que acorda todo dia sem lembrar de nada: nem do projeto, nem das decisões de ontem, nem de você.</p>
+  <div class="practice-grid" style="margin-bottom:20px;">
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🔁 Você reexplica tudo</b><span>Stack, estrutura de pastas, padrão de nomes, como rodar os testes. Toda. Conversa. Nova.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🎲 O resultado é inconsistente</b><span>Mesma tarefa, dois dias diferentes, duas soluções que não conversam entre si.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>↩️ Ele desfaz o que você decidiu</b><span>Aquela escolha que você fez na terça é revertida na quinta, com toda a confiança do mundo.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>😤 Você cansa antes dele</b><span>Repetir contexto é um trabalho chato que não aparece em lugar nenhum — e você paga por ele todo dia.</span></div>
+  </div>
+  <div class="bridge">
+    <span style="color:var(--muted);font-size:.92rem;">🎯 A saída não é escrever prompts maiores. É <strong style="color:var(--text)">tirar o contexto da sua cabeça e colocar no repositório</strong> — num formato que o agente leia sozinho, sem você pedir. É disso que a aula de hoje trata.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 2: MODOS DO CURSOR ─── -->
+<div class="slide" data-title="Os Modos do Cursor">
+<div class="slide-inner slide-scroll">
+  <span class="ptag">02 — antes de digitar qualquer coisa</span>
+  <h2 class="sec-title">O Cursor não é uma ferramenta.<br>São <span style="color:var(--purple)">quatro</span>.</h2>
+  <p class="lead" style="margin-bottom:18px;">Abra o chat com <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">Ctrl/Cmd + I</code> e alterne entre os modos com <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">Shift + Tab</code>. Escolher o modo errado é a causa mais comum de sessão que descarrila — e quase ninguém repara nisso.</p>
+  <div class="cm-grid">
+    <div class="cm" style="border-top-color:var(--cyan);">
+      <div class="cm-top"><span style="font-size:1.3rem;">💬</span><span class="cm-name" style="color:var(--cyan);">Ask</span><span class="cm-kbd">só leitura</span></div>
+      <div class="cm-desc">Responde perguntas e não toca em arquivo nenhum. Consegue rodar comandos de leitura no terminal (checar um commit, listar arquivos) para embasar a resposta.</div>
+      <div class="cm-use"><b>use quando</b>Você quer entender antes de mudar: "o que esse módulo faz?", "onde isso é chamado?", "quais regras estão ativas agora?"</div>
+    </div>
+    <div class="cm" style="border-top-color:var(--purple);">
+      <div class="cm-top"><span style="font-size:1.3rem;">🗺️</span><span class="cm-name" style="color:var(--purple);">Plan</span><span class="cm-kbd">plano em disco</span></div>
+      <div class="cm-desc">Investiga e devolve um plano de ação antes de escrever código. O plano vira um arquivo no disco que você pode <strong style="color:var(--text)">editar como qualquer outro</strong> — e é aí que está o valor.</div>
+      <div class="cm-use"><b>use quando</b>A tarefa toca mais de um arquivo, ou quando você quer discordar do caminho <em>antes</em> de existirem 200 linhas para revisar.</div>
+    </div>
+    <div class="cm" style="border-top-color:var(--green);">
+      <div class="cm-top"><span style="font-size:1.3rem;">⚡</span><span class="cm-name" style="color:var(--green);">Agent</span><span class="cm-kbd">padrão</span></div>
+      <div class="cm-desc">O modo autônomo: lê, escreve, roda comandos e itera sozinho até terminar. É o que a maioria usa o tempo todo — inclusive quando não deveria.</div>
+      <div class="cm-use"><b>use quando</b>O caminho já está claro. Executar é diferente de decidir: o Agent é ótimo executor e um decisor apressado.</div>
+    </div>
+    <div class="cm" style="border-top-color:var(--orange);">
+      <div class="cm-top"><span style="font-size:1.3rem;">🔬</span><span class="cm-name" style="color:var(--orange);">Debug</span><span class="cm-kbd">instrumenta</span></div>
+      <div class="cm-desc">Em vez de adivinhar a causa lendo o código, ele instrumenta a aplicação com logs em tempo de execução, reproduz o bug e trabalha em cima da evidência.</div>
+      <div class="cm-use"><b>use quando</b>O bug resiste a duas tentativas do Agent. É o sinal de que falta observação, não mais palpite.</div>
+    </div>
+  </div>
+  <div class="callout co-warn" style="margin-top:16px;">
+    <div class="ct">Cuidado com o Auto-run</div>
+    <p>Nas configurações do Agent existe o <strong style="color:var(--text)">Auto-run</strong> (o antigo "Yolo mode"): o agente executa comandos de terminal sem pedir confirmação. Útil, e perigoso na mesma medida. Se for ligar, configure a lista de comandos permitidos — não deixe aberto.</p>
+  </div>
+</div>
+</div>
+
+<!-- ─── 3: O CICLO ENTRE MODOS ─── -->
+<div class="slide" data-title="O Ciclo Entre Modos">
+<div class="slide-inner slide-scroll">
+  <span class="ptag">02 — como os modos se encaixam</span>
+  <h2 class="sec-title">O erro é começar direto no <span style="color:var(--green)">Agent</span></h2>
+  <p class="lead" style="margin-bottom:16px;">Você joga um pedido grande no Agent, e noventa segundos depois está olhando um diff que tocou quatorze arquivos — metade deles errados. O problema quase nunca foi o prompt: foi pular as duas etapas anteriores.</p>
+  <div class="card" style="padding:20px;margin-bottom:16px;">
+    <svg viewBox="0 0 900 200" style="width:100%;height:auto;display:block;">
+      <defs><marker id="am" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#7fa8c0"/></marker>
+      <marker id="ao" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#ff6b35"/></marker></defs>
+
+      <rect x="20" y="45" width="170" height="76" rx="14" fill="rgba(0,229,255,.07)" stroke="#00e5ff" stroke-width="1.5"/>
+      <text x="105" y="76" text-anchor="middle" font-size="21">💬</text>
+      <text x="105" y="99" text-anchor="middle" fill="#00e5ff" font-family="Syne" font-size="13" font-weight="800">ASK</text>
+      <text x="105" y="141" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">entender o terreno</text>
+      <text x="105" y="156" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">sem mexer em nada</text>
+
+      <line class="flow-line" x1="196" y1="83" x2="222" y2="83" stroke="#7fa8c0" stroke-width="2" marker-end="url(#am)"/>
+
+      <rect x="228" y="45" width="170" height="76" rx="14" fill="rgba(124,58,237,.09)" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="313" y="76" text-anchor="middle" font-size="21">🗺️</text>
+      <text x="313" y="99" text-anchor="middle" fill="#c4b5fd" font-family="Syne" font-size="13" font-weight="800">PLAN</text>
+      <text x="313" y="141" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">decidir o caminho</text>
+      <text x="313" y="156" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">e editar o plano</text>
+
+      <line class="flow-line" x1="404" y1="83" x2="430" y2="83" stroke="#7fa8c0" stroke-width="2" marker-end="url(#am)"/>
+
+      <rect x="436" y="45" width="170" height="76" rx="14" fill="rgba(0,255,136,.08)" stroke="#00ff88" stroke-width="2"/>
+      <text x="521" y="76" text-anchor="middle" font-size="21">⚡</text>
+      <text x="521" y="99" text-anchor="middle" fill="#00ff88" font-family="Syne" font-size="13" font-weight="800">AGENT</text>
+      <text x="521" y="141" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">executar o plano</text>
+      <text x="521" y="156" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">que já foi aprovado</text>
+
+      <line class="flow-line" x1="612" y1="83" x2="638" y2="83" stroke="#7fa8c0" stroke-width="2" marker-end="url(#am)"/>
+
+      <rect x="644" y="45" width="170" height="76" rx="14" fill="rgba(255,107,53,.07)" stroke="#ff6b35" stroke-width="1.5"/>
+      <text x="729" y="76" text-anchor="middle" font-size="21">🔬</text>
+      <text x="729" y="99" text-anchor="middle" fill="#ff6b35" font-family="Syne" font-size="13" font-weight="800">DEBUG</text>
+      <text x="729" y="141" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">só quando o bug</text>
+      <text x="729" y="156" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10">resistir</text>
+
+      <path class="flow-line" d="M729,45 C729,8 105,8 105,45" fill="none" stroke="#ff6b35" stroke-width="1.8" marker-end="url(#ao)" style="animation-duration:1.7s;"/>
+      <text x="417" y="24" text-anchor="middle" fill="#ff6b35" font-family="IBM Plex Mono" font-size="10">descobriu algo novo? volta pro Ask</text>
+    </svg>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <h3 class="slide-h3" style="color:var(--pink);font-size:1.05rem;">🧵 /multitask e subagentes</h3>
+      <p style="color:var(--muted);font-size:.84rem;line-height:1.7;">Na janela de agentes, o comando <code style="color:var(--pink);font-family:'IBM Plex Mono',monospace;">/multitask</code> quebra uma tarefa grande em subagentes que rodam em paralelo. O detalhe que interessa aqui: <strong style="color:var(--text)">cada subagente tem a própria janela de contexto</strong>, e só o resumo final volta pro agente pai — que fica livre e responsivo.<br><br>Vamos voltar nisso a fundo numa aula dedicada a subagentes. Hoje, só saibam que existe.</p>
+    </div>
+    <div class="card">
+      <h3 class="slide-h3" style="color:var(--cyan);font-size:1.05rem;">🔁 E nas outras ferramentas?</h3>
+      <p style="color:var(--muted);font-size:.84rem;line-height:1.7;">Os nomes mudam, a ideia não. O Claude Code tem um modo de planejamento e uma permissão de só-leitura; o Codex e outros CLIs trabalham com níveis de autonomia parecidos.<br><br>O que vocês precisam levar não é a tecla de atalho — é o hábito de <strong style="color:var(--text)">perguntar "qual modo isso pede?" antes de digitar</strong>. Esse hábito é portátil.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 4: O PROJETO ─── -->
+<div class="slide" data-title="O Projeto: dq">
+<div class="slide-inner slide-scroll">
+  <span class="gtag">03 — o que vamos construir</span>
+  <h2 class="sec-title">O projeto: <span style="color:var(--green)">dq</span></h2>
+  <p class="lead" style="margin-bottom:18px;">Um CLI que recebe um CSV e reporta problemas de qualidade nos dados. Duas aulas para construir. Mas atenção: <strong style="color:var(--text)">o projeto não é o assunto</strong> — ele é a desculpa.</p>
+  <div class="g2" style="margin-bottom:18px;">
+    <div class="card">
+      <h3 class="slide-h3" style="color:var(--orange);">😖 A dor real</h3>
+      <p style="color:var(--muted);font-size:.87rem;line-height:1.7;">
+        Você recebe uma planilha "pronta". Carrega, roda a análise, manda o relatório pro time.<br><br>
+        Três horas depois descobre que a coluna <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">preco_unitario</code> tinha <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">"R$ 1.234,56"</code> no meio dos números.<br><br>
+        Inspeção manual não escala: você olha as primeiras 20 linhas, parecem boas, e segue em frente.
+      </p>
+    </div>
+    <div class="card">
+      <h3 class="slide-h3" style="color:var(--green);">🎯 O que ele vai fazer</h3>
+      <div class="code" style="margin-bottom:12px;">$ dq data/vendas.csv
+
+<span class="o">✗ nulos</span>        13 valores faltando
+<span class="o">✗ duplicatas</span>    3 linhas repetidas
+<span class="o">✗ tipos</span>         8 valores fora do tipo
+<span class="s">✓ formato</span>      nenhum problema</div>
+      <p style="color:var(--muted);font-size:.82rem;line-height:1.6;">Três checks. Um relatório no terminal. Nada além disso — de propósito.</p>
+    </div>
+  </div>
+  <div class="bridge">
+    <span style="color:var(--muted);font-size:.9rem;">🧪 O arquivo <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">data/vendas.csv</code> tem <strong style="color:var(--text)">71 linhas e defeitos plantados de propósito</strong>. Alguns são óbvios. Outros você só acha se procurar. Ele já está no repositório que vocês receberam.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 3: POR QUE ESSE PROJETO ─── -->
+<div class="slide" data-title="Por Que Esse Projeto">
+<div class="slide-inner">
+  <span class="ptag">03 — critério de escolha</span>
+  <h2 class="sec-title">Por que um projeto <span style="color:var(--purple)">propositalmente simples</span>?</h2>
+  <p class="lead" style="margin-bottom:20px;">Se o projeto fosse difícil, a aula viraria uma discussão sobre pandas. O código aqui é banal justamente para que <strong style="color:var(--text)">sobre atenção para o processo</strong>.</p>
+  <div class="practice-grid">
+    <div class="practice-card"><b>🧠 Domínio que vocês já dominam</b><span>Ninguém precisa aprender o negócio. Carga cognitiva zero no problema, 100% no método.</span></div>
+    <div class="practice-card"><b>🧩 Tem camadas naturais</b><span>Ler → validar → relatar. A conversa sobre estrutura de pastas nasce do problema, não de doutrina.</span></div>
+    <div class="practice-card"><b>➕ É trivialmente extensível</b><span>"Adicione um check novo" é o teste perfeito: ou o agente segue o padrão que vocês definiram, ou não segue. Sem meio-termo.</span></div>
+    <div class="practice-card"><b>⚡ Roda em qualquer máquina</b><span>Sem banco, sem API key, sem docker. O tempo de aula vai pro que importa.</span></div>
+  </div>
+  <div class="quote-box" style="margin-top:20px;">
+    💭 No fim das duas aulas, o que vocês levam não é um validador de CSV — é um método que funciona em qualquer repositório que vocês tocarem depois.
+  </div>
+</div>
+</div>
+
+<!-- ─── 4: CONTEXT ENGINEERING ─── -->
+<div class="slide" data-title="Context Engineering">
+<div class="slide-inner">
+  <span class="tag">04 — o conceito central</span>
+  <h2 class="sec-title">Prompt é o que você <span style="color:var(--cyan)">digita</span>.<br>Contexto é tudo que ele <span style="color:var(--purple)">vê</span>.</h2>
+  <p class="lead" style="margin-bottom:18px;">Quando você aperta Enter no Cursor, o modelo não recebe só a sua frase. Ele recebe um pacote — e a sua frase é a menor parte dele.</p>
+  <div class="card" style="padding:18px;">
+    <svg viewBox="0 0 900 250" style="width:100%;height:auto;display:block;">
+      <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#7c3aed"/></marker></defs>
+
+      <text x="20" y="26" fill="#7fa8c0" font-family="IBM Plex Mono" font-size="11" letter-spacing="1.5">O QUE VAI JUNTO NO PACOTE</text>
+
+      <rect x="20" y="42" width="230" height="34" rx="8" fill="rgba(127,168,192,.08)" stroke="#7fa8c0" stroke-width="1"/>
+      <text x="35" y="64" fill="#7fa8c0" font-family="IBM Plex Mono" font-size="11">⚙️ system prompt do Cursor</text>
+
+      <rect x="20" y="82" width="230" height="34" rx="8" fill="rgba(0,255,136,.08)" stroke="#00ff88" stroke-width="1.5"/>
+      <text x="35" y="104" fill="#00ff88" font-family="IBM Plex Mono" font-size="11">📜 agent rules ← hoje</text>
+
+      <rect x="20" y="122" width="230" height="34" rx="8" fill="rgba(0,229,255,.08)" stroke="#00e5ff" stroke-width="1"/>
+      <text x="35" y="144" fill="#00e5ff" font-family="IBM Plex Mono" font-size="11">📁 arquivos que ele leu</text>
+
+      <rect x="20" y="162" width="230" height="34" rx="8" fill="rgba(0,229,255,.08)" stroke="#00e5ff" stroke-width="1"/>
+      <text x="35" y="184" fill="#00e5ff" font-family="IBM Plex Mono" font-size="11">💬 histórico da conversa</text>
+
+      <rect x="20" y="202" width="230" height="34" rx="8" fill="rgba(244,114,182,.1)" stroke="#f472b6" stroke-width="1.5"/>
+      <text x="35" y="224" fill="#f472b6" font-family="IBM Plex Mono" font-size="11">✍️ o seu prompt</text>
+
+      <line class="flow-line" x1="262" y1="139" x2="330" y2="139" stroke="#7c3aed" stroke-width="2" marker-end="url(#ar)"/>
+
+      <rect x="340" y="88" width="190" height="102" rx="16" fill="rgba(124,58,237,.12)" stroke="#7c3aed" stroke-width="2.5"/>
+      <text x="435" y="128" text-anchor="middle" font-size="26">🪟</text>
+      <text x="435" y="156" text-anchor="middle" fill="#c4b5fd" font-family="Syne" font-size="14" font-weight="800">JANELA DE</text>
+      <text x="435" y="174" text-anchor="middle" fill="#c4b5fd" font-family="Syne" font-size="14" font-weight="800">CONTEXTO</text>
+      <text x="435" y="212" text-anchor="middle" fill="#7fa8c0" font-family="IBM Plex Sans" font-size="10.5">espaço finito · tudo compete</text>
+
+      <line class="flow-line" x1="542" y1="139" x2="610" y2="139" stroke="#7c3aed" stroke-width="2" marker-end="url(#ar)"/>
+
+      <rect x="620" y="105" width="160" height="68" rx="14" fill="rgba(0,229,255,.07)" stroke="#00e5ff" stroke-width="1.5"/>
+      <text x="700" y="135" text-anchor="middle" font-size="22">🤖</text>
+      <text x="700" y="158" text-anchor="middle" fill="#00e5ff" font-family="IBM Plex Mono" font-size="11.5">resposta</text>
+
+      <text x="810" y="132" fill="#ff6b35" font-family="IBM Plex Mono" font-size="10.5">qualidade da</text>
+      <text x="810" y="148" fill="#ff6b35" font-family="IBM Plex Mono" font-size="10.5">resposta =</text>
+      <text x="810" y="164" fill="#ff6b35" font-family="IBM Plex Mono" font-size="10.5">qualidade do</text>
+      <text x="810" y="180" fill="#ff6b35" font-family="IBM Plex Mono" font-size="10.5">pacote</text>
+    </svg>
+  </div>
+  <div class="bridge" style="margin-top:16px;">
+    <span style="color:var(--muted);font-size:.9rem;">🧠 <strong style="color:var(--text)">Context engineering</strong> é decidir o que ocupa esse espaço — e <em>quando</em>. Não é escrever instruções melhores; é gerenciar um recurso escasso.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 5: O QUE SÃO AGENT RULES ─── -->
+<div class="slide" data-title="O Que São Agent Rules">
+<div class="slide-inner">
+  <span class="gtag">05 — a ferramenta</span>
+  <h2 class="sec-title">Agent rules: instruções que <span style="color:var(--green)">entram sozinhas</span></h2>
+  <p class="lead" style="margin-bottom:20px;">São arquivos markdown, versionados no repositório, que a ferramenta injeta no contexto automaticamente. Você não cola, não menciona, não lembra. Eles simplesmente estão lá.</p>
+  <div class="vs-wrap">
+    <div class="vs-col ml">
+      <div class="vs-col-title" style="color:var(--orange)">😩 Sem agent rules</div>
+      <div class="vs-item"><span>💬</span><div class="vt"><strong>Você digita o contexto</strong>"Usamos pandas, os testes ficam em tests/, não crie utils.py..."</div></div>
+      <div class="vs-item"><span>🧠</span><div class="vt"><strong>Depende da sua memória</strong>Você esquece uma restrição, o agente viola, você corrige depois.</div></div>
+      <div class="vs-item"><span>👤</span><div class="vt"><strong>Não escala pro time</strong>O contexto está na sua cabeça — não no repositório.</div></div>
+      <div class="vs-item vs-limit"><span>🔀</span><div class="vt"><strong style="color:var(--orange)">Cada um tem seu jeito</strong>Três pessoas, três padrões, um código que não parece do mesmo projeto.</div></div>
+    </div>
+    <div class="vs-sep">VS</div>
+    <div class="vs-col rn">
+      <div class="vs-col-title" style="color:var(--cyan)">📜 Com agent rules</div>
+      <div class="vs-item"><span>⚡</span><div class="vt"><strong>O contexto já está no pacote</strong>Toda conversa começa com as convenções carregadas.</div></div>
+      <div class="vs-item"><span>🔒</span><div class="vt"><strong>As restrições não somem</strong>O "não faça X" continua valendo na mensagem 40.</div></div>
+      <div class="vs-item"><span>👥</span><div class="vt"><strong>Vale pro time inteiro</strong>Está versionado. Quem clonar o repo herda o contexto.</div></div>
+      <div class="vs-item vs-strength"><span>🔍</span><div class="vt"><strong style="color:var(--cyan)">Vira código revisável</strong>Mudou uma convenção? Abre PR. Discute. Aprova.</div></div>
+    </div>
+  </div>
+  <div class="quote-box">
+    💭 O nome técnico é "agent rules", mas o jeito mais honesto de pensar nisso é: <strong style="color:var(--text)">é o onboarding do seu projeto, escrito uma vez, executado automaticamente, para sempre.</strong>
+  </div>
+</div>
+</div>
+
+<!-- ─── 6: TRÊS DIALETOS ─── -->
+<div class="slide" data-title="Um Conceito, Três Dialetos">
+<div class="slide-inner slide-scroll">
+  <span class="tag">06 — o mesmo conceito, nomes diferentes</span>
+  <h2 class="sec-title">Um conceito. <span style="color:var(--cyan)">Três dialetos.</span></h2>
+  <p class="lead" style="margin-bottom:18px;">Cada ferramenta inventou seu próprio nome para a mesma ideia. Isso confunde — mas a lógica é sempre a mesma: <em>markdown no repositório que entra no contexto sozinho</em>.</p>
+  <div class="dialect-grid" style="margin-bottom:18px;">
+    <div class="dialect" style="border-color:rgba(255,107,53,.3);">
+      <div class="dfile" style="color:var(--orange);">CLAUDE.md</div>
+      <div class="dwho">Convenção da Anthropic · Claude Code</div>
+      <div class="ddesc">Modelo de memória em camadas: um arquivo global na sua home, um na raiz do projeto, e opcionalmente um por subpasta. Mais rico que o padrão aberto, mas só o Claude Code entende essa hierarquia.</div>
+    </div>
+    <div class="dialect" style="border-color:rgba(0,255,136,.3);">
+      <div class="dfile" style="color:var(--green);">AGENTS.md</div>
+      <div class="dwho">Padrão aberto · quase todo mundo lê</div>
+      <div class="ddesc">Proposto pela OpenAI em agosto de 2025 e doado à Linux Foundation em dezembro do mesmo ano. Markdown puro, sem configuração. Lido nativamente por Cursor, Codex, Copilot, Gemini CLI, Aider, Windsurf e outros.</div>
+    </div>
+    <div class="dialect" style="border-color:rgba(124,58,237,.35);">
+      <div class="dfile" style="color:var(--purple);">.cursor/rules/*.mdc</div>
+      <div class="dwho">Específico do Cursor · o nosso caso</div>
+      <div class="ddesc">Markdown com um bloco de configuração no topo. É o único formato que permite dizer <em>quando</em> a regra deve entrar no contexto — e é por isso que ele existe.</div>
+    </div>
+  </div>
+  <div class="bridge">
+    <span style="color:var(--muted);font-size:.9rem;">🧭 <strong style="color:var(--text)">A regra prática:</strong> se você só adota um, adote o <code style="color:var(--green);font-family:'IBM Plex Mono',monospace;">AGENTS.md</code> — é o de maior alcance. Os outros dois são especializações que você adiciona quando precisa do que eles fazem de diferente.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 7: .md vs .mdc ─── -->
+<div class="slide" data-title=".md vs .mdc">
+<div class="slide-inner slide-scroll">
+  <span class="ptag">07 — a diferença que importa no Cursor</span>
+  <h2 class="sec-title"><span style="color:var(--muted)">.md</span> vs <span style="color:var(--purple)">.mdc</span></h2>
+  <p class="lead" style="margin-bottom:16px;">MDC significa <strong style="color:var(--text)">Markdown with Configuration</strong>. É markdown normal com um bloco YAML no topo — e esse bloco é a diferença inteira.</p>
+  <div class="g2" style="margin-bottom:16px;">
+    <div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:8px;">AGENTS.md — MARKDOWN PURO</div>
+      <div class="code"><span class="h"># Convenções do projeto</span>
+
+Todo check devolve um <span class="s">CheckResult</span>.
+Os testes ficam em <span class="s">tests/</span>.
+Não crie <span class="s">utils.py</span>.</div>
+      <p style="color:var(--muted);font-size:.8rem;line-height:1.6;margin-top:10px;">Sem metadados. Carregado por inteiro, sempre, em toda requisição. Simples e portátil.</p>
+    </div>
+    <div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--purple);letter-spacing:1.5px;margin-bottom:8px;">CHECKS.MDC — COM CONFIGURAÇÃO</div>
+      <div class="code" style="border-color:rgba(124,58,237,.3);"><span class="o">---</span>
+<span class="k">description</span>: <span class="s">Padrão para escrever checks</span>
+<span class="k">globs</span>: <span class="s">["src/dq/checks.py"]</span>
+<span class="k">alwaysApply</span>: <span class="s">false</span>
+<span class="o">---</span>
+
+<span class="h"># Como escrever um check</span>
+
+Assinatura: <span class="s">check_x(df) -> CheckResult</span></div>
+      <p style="color:var(--purple);font-size:.8rem;line-height:1.6;margin-top:10px;">Os três campos do topo decidem <strong>quando</strong> essa regra entra no contexto. Fora disso, é markdown igual.</p>
+    </div>
+  </div>
+  <div class="practice-grid">
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>⚠️ Um .md dentro de .cursor/rules é ignorado</b><span>Dentro dessa pasta, o Cursor só lê arquivos <code style="font-family:'IBM Plex Mono',monospace;">.mdc</code>. Trocar a extensão é o erro mais comum de quem está começando.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🗑️ O .cursorrules da raiz é legado</b><span>Ainda é lido por compatibilidade, mas é ignorado no modo Agent e não recebe features novas. Metade dos tutoriais no Google ainda ensina ele — desconfie.</span></div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 8: 4 MODOS DE ATIVAÇÃO ─── -->
+<div class="slide" data-title="Os 4 Modos de Ativação">
+<div class="slide-inner slide-scroll">
+  <span class="ptag">07 — o coração do context engineering</span>
+  <h2 class="sec-title">Quatro formas de uma regra <span style="color:var(--purple)">entrar</span></h2>
+  <p class="lead" style="margin-bottom:16px;">A combinação dos três campos do frontmatter define o modo. Clique em cada um.</p>
+  <div class="mode-sel">
+    <div class="msel" id="m-always" onclick="selMode('always')"><div class="mi">🔒</div><div class="mt">Sempre</div></div>
+    <div class="msel" id="m-glob"   onclick="selMode('glob')"><div class="mi">🎯</div><div class="mt">Por arquivo</div></div>
+    <div class="msel" id="m-agent"  onclick="selMode('agent')"><div class="mi">🤔</div><div class="mt">Sob demanda</div></div>
+    <div class="msel" id="m-manual" onclick="selMode('manual')"><div class="mi">✋</div><div class="mt">Manual</div></div>
+  </div>
+  <div id="mode-detail"></div>
+  <div class="bridge" style="margin-top:16px;">
+    <span style="color:var(--muted);font-size:.9rem;">💸 <strong style="color:var(--text)">O imposto de tokens:</strong> tudo que está em <code style="color:var(--pink);font-family:'IBM Plex Mono',monospace;">alwaysApply: true</code> é reenviado em <em>toda</em> requisição, o dia inteiro. Regra sempre-ligada deve ser curta e universal. O resto vive melhor com glob.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 9: QUAL USAR QUANDO ─── -->
+<div class="slide" data-title="Qual Usar Quando">
+<div class="slide-inner slide-scroll">
+  <span class="tag">08 — decisão prática</span>
+  <h2 class="sec-title">Qual arquivo usar em <span style="color:var(--cyan)">cada cenário</span></h2>
+  <table class="tbl" style="margin-bottom:16px;">
+    <thead><tr><th>Seu cenário</th><th>O que criar</th><th>Por quê</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Só uso Cursor</strong><br>(o nosso caso hoje)</td>
+        <td><code style="color:var(--green)">AGENTS.md</code> + 1 ou 2 <code style="color:var(--purple)">.mdc</code></td>
+        <td>O AGENTS.md carrega as convenções gerais; os .mdc escopam o que só importa em certos arquivos.</td>
+      </tr>
+      <tr>
+        <td><strong>Só uso Claude Code</strong></td>
+        <td><code style="color:var(--orange)">CLAUDE.md</code></td>
+        <td>Você ganha a hierarquia em camadas (global + projeto + subpasta) que o padrão aberto não tem.</td>
+      </tr>
+      <tr>
+        <td><strong>Só uso Codex / Copilot / Gemini CLI</strong></td>
+        <td><code style="color:var(--green)">AGENTS.md</code></td>
+        <td>Todos leem esse arquivo nativamente. Não há motivo para inventar outro formato.</td>
+      </tr>
+      <tr>
+        <td><strong>Alterno entre ferramentas</strong><br>ou o time é misto</td>
+        <td><code style="color:var(--green)">AGENTS.md</code> como fonte única<br>+ ponteiros</td>
+        <td>Uma verdade, vários apontadores. É o cenário mais comum na vida real — e o próximo slide é só sobre ele.</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="quote-box">
+    💭 Repare que a resposta é <code style="color:var(--green);font-family:'IBM Plex Mono',monospace;">AGENTS.md</code> em três das quatro linhas. Quando estiver em dúvida, comece por ele e adicione o resto só quando sentir falta.
+  </div>
+</div>
+</div>
+
+<!-- ─── 10: MULTI-MODELO ─── -->
+<div class="slide" data-title="Usando Vários Modelos">
+<div class="slide-inner slide-scroll">
+  <span class="otag">08 — o cenário real</span>
+  <h2 class="sec-title">E se eu uso <span style="color:var(--orange)">vários modelos</span>?</h2>
+  <p class="lead" style="margin-bottom:18px;">Cursor de manhã, Claude Code à tarde, Codex numa tarefa específica. É o normal hoje. E é aqui que quase todo mundo comete o mesmo erro.</p>
+  <div class="yn" style="margin-bottom:18px;">
+    <div class="yn-col yn-no">
+      <h4 style="color:var(--orange);">O erro: duplicar</h4>
+      <ul>
+        <li>Você copia as mesmas convenções em <code>CLAUDE.md</code>, <code>AGENTS.md</code> e num <code>.mdc</code></li>
+        <li>Funciona lindamente por duas semanas</li>
+        <li>Alguém muda uma convenção e atualiza só um dos três</li>
+        <li>Agora os arquivos se contradizem — e o agente obedece o errado</li>
+        <li><strong style="color:var(--orange)">Regra contraditória é pior que regra nenhuma:</strong> sem regra ele pergunta, com regra errada ele age com confiança</li>
+      </ul>
+    </div>
+    <div class="yn-col yn-yes">
+      <h4 style="color:var(--green);">A saída: fonte única + ponteiro</h4>
+      <ul>
+        <li><code>AGENTS.md</code> é a única fonte de verdade — todo o conteúdo mora nele</li>
+        <li><code>CLAUDE.md</code> vira um arquivo de duas linhas apontando para ele</li>
+        <li>Os <code>.mdc</code> guardam <strong>só</strong> o que é específico do Cursor: o escopo por glob</li>
+        <li>Uma mudança, um arquivo, um lugar para revisar no PR</li>
+        <li>Se um dia você trocar de ferramenta, o contexto vai junto</li>
+      </ul>
+    </div>
+  </div>
+  <div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1.5px;margin-bottom:8px;">CLAUDE.MD INTEIRO, NO MODELO DE PONTEIRO</div>
+    <div class="code"><span class="c"># Instruções do projeto</span>
+
+As convenções deste repositório estão em <span class="s">@AGENTS.md</span>.
+Leia esse arquivo antes de qualquer tarefa. Não duplique nada aqui.</div>
+  </div>
+</div>
+</div>
+
+<!-- ─── 11: ANATOMIA ─── -->
+<div class="slide" data-title="Anatomia de um AGENTS.md">
+<div class="slide-inner slide-scroll">
+  <span class="gtag">09 — o que escrever de verdade</span>
+  <h2 class="sec-title">O que <span style="color:var(--green)">entra</span> e o que <span style="color:var(--orange)">não entra</span></h2>
+  <div class="yn" style="margin-bottom:18px;">
+    <div class="yn-col yn-yes">
+      <h4 style="color:var(--green);">Entra</h4>
+      <ul>
+        <li><strong>Comandos</strong> — como rodar testes, lint, o projeto</li>
+        <li><strong>Mapa de diretórios</strong> — o que vive onde, e por quê</li>
+        <li><strong>Convenções não óbvias</strong> — as que ele erraria se chutasse</li>
+        <li><strong>O que NÃO fazer</strong> — restrições explícitas, a seção mais subestimada</li>
+        <li><strong>Como testar</strong> — o padrão de teste que o projeto segue</li>
+      </ul>
+    </div>
+    <div class="yn-col yn-no">
+      <h4 style="color:var(--orange);">Não entra</h4>
+      <ul>
+        <li><strong>O que dá pra ler do código</strong> — ele consegue abrir o arquivo sozinho</li>
+        <li><strong>Requisitos de produto</strong> — isso é outro documento, carregado sob demanda</li>
+        <li><strong>Tutorial de linguagem</strong> — ele sabe Python melhor que a gente</li>
+        <li><strong>Histórico e decisões antigas</strong> — vira ADR (aula futura)</li>
+        <li><strong>Qualquer coisa que muda toda semana</strong> — envelhece e passa a mentir</li>
+      </ul>
+    </div>
+  </div>
+  <div class="bridge">
+    <span style="color:var(--muted);font-size:.92rem;">🎯 <strong style="color:var(--text)">O teste dos 10 minutos:</strong> se um dev sênior entrasse no time hoje, o que você contaria a ele nos primeiros 10 minutos que ele <em>não</em> descobriria sozinho lendo o código? Isso — e só isso — é o seu AGENTS.md.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 12: O ERRO CLÁSSICO ─── -->
+<div class="slide" data-title="O Erro Clássico">
+<div class="slide-inner">
+  <span class="otag">09 — a armadilha</span>
+  <h2 class="sec-title">Mais regra <span style="color:var(--muted)">≠</span> mais <span style="color:var(--orange)">obediência</span></h2>
+  <p class="lead" style="margin-bottom:20px;">O caminho natural de quem descobre agent rules é escrever um arquivo de 800 linhas com tudo que já deu errado. Isso piora o resultado, e por dois motivos ao mesmo tempo.</p>
+  <div class="g2" style="margin-bottom:18px;">
+    <div class="card" style="border-color:rgba(255,107,53,.25);">
+      <h3 class="slide-h3" style="color:var(--orange);">💸 Custo</h3>
+      <p style="color:var(--muted);font-size:.87rem;line-height:1.7;">Cada token de regra sempre-ligada é reenviado a cada mensagem. Um AGENTS.md gigante come a janela antes mesmo de você fazer a primeira pergunta — e empurra pra fora justamente o código que ele precisava ler.</p>
+    </div>
+    <div class="card" style="border-color:rgba(255,107,53,.25);">
+      <h3 class="slide-h3" style="color:var(--orange);">🌫️ Diluição</h3>
+      <p style="color:var(--muted);font-size:.87rem;line-height:1.7;">Cinquenta regras de igual peso não têm peso nenhum. Quando tudo é importante, nada é prioridade — e o modelo escolhe qual seguir por conta própria. Cinco regras que ele obedece valem mais que cinquenta que ele ignora.</p>
+    </div>
+  </div>
+  <div class="practice-grid">
+    <div class="practice-card"><b>📏 Mantenha curto</b><span>Cada arquivo de regra abaixo de ~500 linhas; o conjunto sempre-ligado, bem menor que isso.</span></div>
+    <div class="practice-card"><b>✂️ Fatie por escopo</b><span>Quando o arquivo engorda, não corte conteúdo: mova o que é específico para um .mdc com glob.</span></div>
+    <div class="practice-card"><b>🌱 Destile do atrito</b><span>Não escreva as regras de antemão. Escreva quando o agente errar — aí você sabe que ela é necessária.</span></div>
+    <div class="practice-card"><b>🗑️ Delete sem dó</b><span>Regra que descreve algo que não existe mais é pior que nenhuma regra. Revise junto com o código.</span></div>
+  </div>
+</div>
+</div>
+
+<!-- ─── TUTORIAL 1: PREPARAR O CONTEXTO ─── -->
+<div class="slide" data-title="Tutorial — Preparar o Contexto">
+<div class="slide-inner slide-scroll">
+  <span class="gtag">10 — mão na massa (1/2)</span>
+  <h2 class="sec-title">Tutorial: <span style="color:var(--green)">preparando o contexto</span></h2>
+  <p class="lead" style="margin-bottom:18px;">Abram a pasta <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">dq/</code> no Cursor. Clique em cada passo para expandir — façam junto comigo, um de cada vez.</p>
+
+  <div class="tut">
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge">PASSO 1</span>
+        <span class="tut-q">Reconhecer o terreno sem mexer em nada</span>
+        <span class="tut-mode">💬 Ask</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <p>Antes de escrever qualquer regra, veja o que o agente entende do projeto <strong>sozinho</strong>. Isso te mostra exatamente o que falta explicar — e o que seria desperdício de contexto explicar.</p>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">chat · modo Ask</span><span class="lbadge">prompt</span></div>
+          <div class="code">Descreva este projeto: o que ele faz, qual a estrutura,
+como eu rodaria os testes e quais convenções você
+seguiria se eu pedisse um arquivo novo.
+
+Não escreva código.</div>
+        </div>
+        <div class="callout co-info">
+          <div class="ct">O que observar</div>
+          <p>Ele vai acertar a stack (viu o <code>pyproject.toml</code>) e chutar o resto. Anotem os chutes: é literalmente a pauta do arquivo que vocês vão escrever no próximo passo.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge">PASSO 2</span>
+        <span class="tut-q">Criar o AGENTS.md na raiz</span>
+        <span class="tut-mode">✍️ você escreve</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <p>Este arquivo é escrito <strong>por vocês</strong>, não gerado. É curto de propósito: só o que o agente erraria se chutasse.</p>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">AGENTS.md</span><span class="lbadge">markdown</span></div>
+          <div class="code"><span class="h"># AGENTS.md</span>
+
+<span class="h">## O que é este projeto</span>
+`dq` é um CLI que lê um CSV e reporta problemas de
+qualidade nos dados. Não corrige nada, não escreve
+arquivos — só lê e relata.
+
+<span class="h">## Comandos</span>
+pytest -q                 <span class="c"># roda os testes</span>
+dq data/vendas.csv        <span class="c"># roda o CLI</span>
+
+<span class="h">## Estrutura</span>
+src/dq/cli.py      → argumentos e impressão. Sem regra de negócio.
+src/dq/checks.py   → todas as validações.
+tests/             → um arquivo de teste por módulo.
+data/              → somente leitura, nunca sobrescrever.
+
+<span class="h">## Convenções obrigatórias</span>
+- Todo check devolve um `CheckResult` (dataclass com
+  nome, ok, total, detalhe). Nunca `bool`, nunca string solta.
+- Checks são registrados no dicionário `CHECKS`, nunca em if/elif.
+- Toda função de check recebe `df: pd.DataFrame` e devolve
+  `CheckResult`. Sem parâmetros posicionais extras.
+- A saída vai para stdout. Não escreva arquivo de relatório.
+- Nada de `print` dentro de `checks.py`. Quem imprime é o `cli.py`.
+
+<span class="h">## O que NÃO fazer</span>
+- Não adicione dependências. `pandas` e `pytest` bastam.
+- Não crie `utils.py`, `helpers.py` ou `common.py`.
+- Não escreva nem modifique nada em `data/`.
+- Não refatore código fora do pedido atual.</div>
+        </div>
+        <div class="callout co-ok">
+          <div class="ct">O teste dos 10 minutos</div>
+          <p>Só entra aqui o que vocês contariam a um dev sênior novo nos primeiros 10 minutos e que ele <em>não</em> descobriria sozinho lendo o código. Se dá pra ler do código, não escrevam.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge mk">PASSO 3</span>
+        <span class="tut-q">Criar a primeira regra escopada</span>
+        <span class="tut-mode">✍️ você escreve</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <p>Crie a pasta <code>.cursor/rules/</code> e dentro dela o arquivo abaixo. Repare no frontmatter: ele diz que essa regra <strong>só</strong> entra quando o agente tocar nesses dois arquivos.</p>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">.cursor/rules/checks.mdc</span><span class="lbadge">mdc</span></div>
+          <div class="code"><span class="o">---</span>
+<span class="k">description</span>: <span class="s">Padrão para escrever e registrar checks de qualidade</span>
+<span class="k">globs</span>: <span class="s">["src/dq/checks.py", "tests/test_checks.py"]</span>
+<span class="k">alwaysApply</span>: <span class="s">false</span>
+<span class="o">---</span>
+
+<span class="h"># Como escrever um check</span>
+
+<span class="h">## Assinatura</span>
+def check_&lt;nome&gt;(df: pd.DataFrame) -> CheckResult
+
+Sem parâmetros extras. Se precisar de configuração,
+use valor padrão nomeado — nunca segundo posicional.
+
+<span class="h">## Passos ao adicionar um check</span>
+1. Escreva a função em `src/dq/checks.py`.
+2. Registre no dicionário `CHECKS` no fim do arquivo.
+3. Escreva o teste com um DataFrame construído na mão.
+4. Não toque em `cli.py` — ele já itera sobre `CHECKS`.
+
+<span class="h">## Regras do CheckResult</span>
+- `ok` é True quando NADA foi encontrado.
+- `total` é contagem de ocorrências, não de linhas.
+- `detalhe` é uma frase curta em português, sem quebra de linha.</div>
+        </div>
+        <div class="callout co-warn">
+          <div class="ct">Erro mais comum</div>
+          <p>Salvar como <code>.md</code>. Dentro de <code>.cursor/rules/</code> o Cursor só lê <code>.mdc</code> — e não avisa quando ignora. YAML também é sensível a indentação: um <code>globs</code> mal escrito nunca dispara, silenciosamente.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge mk">PASSO 4</span>
+        <span class="tut-q">Provar que o glob funciona — o momento da aula</span>
+        <span class="tut-mode">💬 Ask</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <p>Aqui "engenharia de contexto" deixa de ser jargão. Vamos <strong>ver</strong> a regra entrando e saindo do contexto conforme o arquivo aberto.</p>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">1 · abra src/dq/cli.py e pergunte</span><span class="lbadge">prompt</span></div>
+          <div class="code">Quais regras estão ativas nesta conversa agora?
+Liste pelo nome do arquivo.</div>
+        </div>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">2 · agora abra src/dq/checks.py e pergunte o mesmo</span><span class="lbadge">prompt</span></div>
+          <div class="code">E agora? Quais regras estão ativas?</div>
+        </div>
+        <div class="callout co-ok">
+          <div class="ct">O resultado</div>
+          <p>Na primeira pergunta, só o <code>AGENTS.md</code>. Na segunda, o <code>AGENTS.md</code> <strong>e</strong> o <code>checks.mdc</code>. A regra não estava "desligada" — ela simplesmente não ocupava espaço enquanto não era relevante. Isso é context engineering na prática.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ─── TUTORIAL 2: CONSTRUIR ─── -->
+<div class="slide" data-title="Tutorial — Construir">
+<div class="slide-inner slide-scroll">
+  <span class="gtag">10 — mão na massa (2/2)</span>
+  <h2 class="sec-title">Tutorial: <span style="color:var(--green)">construindo com o contexto pronto</span></h2>
+  <p class="lead" style="margin-bottom:18px;">Repare no que os prompts daqui pra frente <em>não</em> dizem: nada de estrutura de pastas, nada de "use pandas", nada de "escreva testes". Tudo isso já está no contexto.</p>
+
+  <div class="tut">
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge mk">PASSO 5</span>
+        <span class="tut-q">Planejar antes de deixar ele escrever</span>
+        <span class="tut-mode">🗺️ Plan</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <p>Troque para o modo Plan com <code>Shift + Tab</code>. É mais fácil discordar de um plano de dez linhas do que de um diff de duzentas.</p>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">chat · modo Plan</span><span class="lbadge">prompt</span></div>
+          <div class="code">Leia o AGENTS.md. Planeje a estrutura mínima do projeto:
+
+- src/dq/checks.py com o dataclass CheckResult e o
+  dicionário CHECKS
+- src/dq/cli.py que recebe o caminho do CSV, lê com pandas
+  e itera sobre CHECKS imprimindo cada resultado
+- apenas o check_nulos implementado
+- tests/test_checks.py com um caso que passa e um que falha
+
+Não implemente mais nenhum check.</div>
+        </div>
+        <div class="callout co-info">
+          <div class="ct">Leiam o plano antes de aprovar</div>
+          <p>O plano é salvo como arquivo em disco e você pode <strong>editá-lo direto</strong>. Se ele planejou algo fora do combinado, corrija ali — sai muito mais barato que corrigir depois no código.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge mv">PASSO 6</span>
+        <span class="tut-q">Executar o plano</span>
+        <span class="tut-mode">⚡ Agent</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <p>Com o plano aprovado, o Agent vira só um executor — que é onde ele é excelente. O resultado deve ficar assim:</p>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">src/dq/checks.py</span><span class="lbadge">python</span></div>
+          <div class="code"><span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+<span class="k">import</span> pandas <span class="k">as</span> pd
+
+
+<span class="o">@dataclass</span>
+<span class="k">class</span> <span class="h">CheckResult</span>:
+    nome: str
+    ok: bool
+    total: int
+    detalhe: str
+
+
+<span class="k">def</span> <span class="h">check_nulos</span>(df: pd.DataFrame) -> CheckResult:
+    contagem = df.isna().sum()
+    faltando = contagem[contagem > <span class="s">0</span>]
+    total = <span class="h">int</span>(faltando.sum())
+    <span class="k">if</span> total == <span class="s">0</span>:
+        <span class="k">return</span> CheckResult(<span class="s">"nulos"</span>, <span class="k">True</span>, <span class="s">0</span>, <span class="s">"Nenhum valor faltando."</span>)
+    colunas = <span class="s">", "</span>.join(<span class="s">f"{col} ({n})"</span> <span class="k">for</span> col, n <span class="k">in</span> faltando.items())
+    <span class="k">return</span> CheckResult(<span class="s">"nulos"</span>, <span class="k">False</span>, total, <span class="s">f"Valores faltando em: {colunas}"</span>)
+
+
+CHECKS = {
+    <span class="s">"nulos"</span>: check_nulos,
+}</div>
+        </div>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">src/dq/cli.py</span><span class="lbadge">python</span></div>
+          <div class="code"><span class="k">import</span> argparse
+<span class="k">import</span> pandas <span class="k">as</span> pd
+<span class="k">from</span> dq.checks <span class="k">import</span> CHECKS
+
+
+<span class="k">def</span> <span class="h">main</span>() -> <span class="k">None</span>:
+    parser = argparse.ArgumentParser(description=<span class="s">"Valida a qualidade de um CSV."</span>)
+    parser.add_argument(<span class="s">"caminho"</span>)
+    args = parser.parse_args()
+
+    df = pd.read_csv(args.caminho)
+    <span class="k">for</span> nome, check <span class="k">in</span> CHECKS.items():
+        r = check(df)
+        simbolo = <span class="s">"✓"</span> <span class="k">if</span> r.ok <span class="k">else</span> <span class="s">"✗"</span>
+        <span class="h">print</span>(<span class="s">f"{simbolo} {r.nome:&lt;12} {r.detalhe}"</span>)</div>
+        </div>
+        <div class="callout co-warn">
+          <div class="ct">Leiam o diff inteiro</div>
+          <p>Não aceitem só porque rodou. Import que ninguém pediu, função que nunca é chamada, arquivo criado fora do combinado — é aqui que aparece.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge mv">PASSO 7</span>
+        <span class="tut-q">Rodar e validar de verdade</span>
+        <span class="tut-mode">⌨️ terminal</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">terminal</span><span class="lbadge">bash</span></div>
+          <div class="code">pytest -q
+dq data/vendas.csv</div>
+        </div>
+        <p>A saída esperada aponta valores faltando em várias colunas. O CSV tem <strong>71 linhas com defeitos plantados de propósito</strong> — se o check disser que está tudo certo, o check está errado.</p>
+        <div class="callout co-info">
+          <div class="ct">Curiosidade que vale 30 segundos</div>
+          <p>Uma das linhas tem a string <code>N/A</code> no preço. O <code>pandas.read_csv</code> converte isso em nulo <strong>sozinho</strong>, sem avisar. O check de nulos acha; um futuro check de tipos nunca vai ver. A ferramenta tomou uma decisão por você — e não te contou.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge">PASSO 8</span>
+        <span class="tut-q">Auditar as próprias regras</span>
+        <span class="tut-mode">💬 Ask</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <p>O passo mais subestimado da lista. O agente é o melhor revisor das regras dele mesmo — ele sabe exatamente onde a instrução ficou vaga e onde ele teve que chutar.</p>
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">chat · modo Ask</span><span class="lbadge">prompt</span></div>
+          <div class="code">Revise o AGENTS.md e o checks.mdc deste projeto.
+
+Aponte regras ambíguas, redundantes, ou que você não
+conseguiria seguir sem chutar. Diga também se alguma
+delas é desnecessária porque você já inferiria do código.
+
+Não altere os arquivos, só liste.</div>
+        </div>
+        <div class="callout co-ok">
+          <div class="ct">Editem ao vivo</div>
+          <p>Peguem uma ou duas críticas e corrijam o arquivo na hora. É assim que a regra amadurece: <strong>destilada do atrito</strong>, não escrita de antemão.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tut-case">
+      <div class="tut-head" onclick="tut(this)">
+        <span class="tut-badge">PASSO 9</span>
+        <span class="tut-q">Commitar e fechar</span>
+        <span class="tut-mode">⌨️ terminal</span>
+        <span class="tut-tog">▼</span>
+      </div>
+      <div class="tut-body">
+        <div class="code-wrap">
+          <div class="code-header"><span class="fname">terminal</span><span class="lbadge">bash</span></div>
+          <div class="code">git add -A
+git commit -m <span class="s">"aula 2: contexto do projeto + primeiro check"</span></div>
+        </div>
+        <p>Repare no que acabou de ser versionado junto com o código: o <code>AGENTS.md</code> e o <code>checks.mdc</code>. <strong>O contexto virou parte do repositório</strong> — revisável em PR, herdado por quem clonar, vivo depois que essa conversa morrer.</p>
+        <div class="callout co-warn">
+          <div class="ct">Antes de sair</div>
+          <p>Na próxima aula, <strong>abram um chat NOVO</strong>. Não continuem essa conversa. Vai fazer sentido.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+<!-- ─── 15: ARMADILHAS ─── -->
+<div class="slide" data-title="Armadilhas">
+<div class="slide-inner">
+  <span class="otag">11 — o que costuma dar errado</span>
+  <h2 class="sec-title">Cinco armadilhas <span style="color:var(--orange)">na primeira vez</span></h2>
+  <div class="practice-grid" style="margin-bottom:16px;">
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>📄 Salvar como .md dentro de .cursor/rules</b><span>O arquivo é simplesmente ignorado, sem aviso nenhum. Você acha que a regra está ativa e ela nunca esteve.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🌍 Glob que casa com tudo</b><span><code style="font-family:'IBM Plex Mono',monospace;">**/*</code> transforma uma regra escopada numa regra sempre-ligada. Se o glob pega tudo, você perdeu o motivo de ter usado .mdc.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>🤷 Regra vaga</b><span>"Escreva código limpo" não é uma regra — é um desejo. "Todo check devolve CheckResult" é uma regra: dá pra verificar se foi seguida.</span></div>
+    <div class="practice-card" style="border-left-color:var(--orange);"><b>📋 Copiar template da internet</b><span>Regra que não nasceu de um problema seu descreve um projeto que não é o seu. Ocupa contexto e não protege nada.</span></div>
+  </div>
+  <div class="card" style="border-color:rgba(255,107,53,.28);">
+    <b style="font-family:'Syne',sans-serif;font-size:.95rem;color:var(--orange);display:block;margin-bottom:6px;">🤐 E a quinta: assumir que o agente leu</b>
+    <span style="color:var(--muted);font-size:.85rem;line-height:1.6;">Ele não avisa quando ignora uma regra. Na dúvida, pergunte direto: <em>"quais regras estão ativas nesta conversa?"</em>. Leva cinco segundos e evita meia hora de confusão.</span>
+  </div>
+</div>
+</div>
+
+<!-- ─── 18: FECHAMENTO / GANCHO ─── -->
+<div class="slide" data-title="A Pergunta Que Fica">
+<div class="slide-inner" style="text-align:center;">
+  <div style="font-size:2.8rem;margin-bottom:16px;">🕳️</div>
+  <span class="otag" style="justify-content:center;display:flex;">antes da próxima aula</span>
+  <h2 class="sec-title" style="margin-bottom:18px;">Tem um <span style="color:var(--orange)">buraco</span> no que a gente fez hoje</h2>
+  <p class="lead" style="max-width:700px;margin:0 auto 20px;">Você escreveu um AGENTS.md com as convenções do projeto. Mas hoje você tomou pelo menos <strong style="color:var(--text)">três decisões que não estão nele</strong> — e que também não são óbvias lendo o código.</p>
+  <div class="card" style="max-width:720px;margin:0 auto 20px;text-align:left;border-color:rgba(255,107,53,.28);">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--orange);letter-spacing:1.5px;margin-bottom:12px;">POR EXEMPLO</div>
+    <div style="color:var(--muted);font-size:.87rem;line-height:1.85;">
+      → Por que <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">ok=True</code> significa "não achou problema", e não o contrário?<br>
+      → Por que <code style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;">total</code> conta ocorrências e não linhas afetadas?<br>
+      → Por que você desistiu daquela primeira abordagem no meio do caminho?
+    </div>
+  </div>
+  <div class="hero-q" style="max-width:700px;margin:0 auto;">
+    💭 Semana que vem você vai abrir um chat novo. O agente não vai saber de nenhuma dessas três coisas — e vai desfazer as três com toda a confiança do mundo.<br><br>
+    <strong style="color:var(--text);font-style:normal;">Onde é que essas decisões deveriam morar? No AGENTS.md também? Se não, onde?</strong>
+  </div>
+  <p style="color:var(--muted);font-size:.85rem;margin-top:22px;line-height:1.7;max-width:620px;margin-left:auto;margin-right:auto;">
+    Pensem nisso durante a semana. E lembrem: <strong style="color:var(--orange)">chat novo na próxima aula.</strong><br>Não continuem a conversa de hoje — a dor faz parte do plano.
+  </p>
+</div>
+</div>
+
+</div><!-- /slides -->
+
+<script>
+// ══════════════════════════ BG CANVAS ══════════════════════════
+const bgCanvas = document.getElementById('bg');
+const bgCtx = bgCanvas.getContext('2d');
+let BW, BH, nodes = [];
+function resizeBg() { BW = bgCanvas.width = window.innerWidth; BH = bgCanvas.height = window.innerHeight; }
+resizeBg(); window.addEventListener('resize', () => { resizeBg(); initNodes(); });
+function initNodes() {
+  nodes = [];
+  const n = Math.floor((BW * BH) / 18000);
+  for (let i = 0; i < n; i++) nodes.push({ x:Math.random()*BW, y:Math.random()*BH, vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4, r:Math.random()*2+1 });
+}
+initNodes();
+function drawBg() {
+  bgCtx.clearRect(0, 0, BW, BH);
+  nodes.forEach(n => { n.x += n.vx; n.y += n.vy; if(n.x<0||n.x>BW)n.vx*=-1; if(n.y<0||n.y>BH)n.vy*=-1; });
+  for (let i = 0; i < nodes.length; i++) for (let j = i+1; j < nodes.length; j++) {
+    const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, d=Math.sqrt(dx*dx+dy*dy);
+    if (d < 120) { bgCtx.beginPath(); bgCtx.moveTo(nodes[i].x,nodes[i].y); bgCtx.lineTo(nodes[j].x,nodes[j].y); bgCtx.strokeStyle=`rgba(124,58,237,${.15*(1-d/120)})`; bgCtx.lineWidth=.5; bgCtx.stroke(); }
+  }
+  nodes.forEach(n => { bgCtx.beginPath(); bgCtx.arc(n.x,n.y,n.r,0,Math.PI*2); bgCtx.fillStyle='rgba(0,229,255,.5)'; bgCtx.fill(); });
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+// ══════════════════════════ SLIDE ENGINE ══════════════════════════
+const slideEls = Array.from(document.querySelectorAll('.slide'));
+const TOTAL = slideEls.length;
+let current = 0;
+
+const progressBar = document.getElementById('progress-bar');
+const counter     = document.getElementById('slide-counter');
+const titleBar    = document.getElementById('slide-title-bar');
+const navPrev     = document.getElementById('nav-prev');
+const navNext     = document.getElementById('nav-next');
+const dotsEl      = document.getElementById('dots');
+
+slideEls.forEach((_, i) => {
+  const d = document.createElement('div'); d.className = 'dot'; d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(n) {
+  if (n < 0 || n >= TOTAL) return;
+  slideEls.forEach((s, i) => {
+    s.classList.remove('active', 'prev');
+    if (i < n) s.classList.add('prev');
+  });
+  slideEls[n].classList.add('active');
+  current = n;
+  updateUI();
+  onSlideEnter(current);
+}
+
+function updateUI() {
+  progressBar.style.width = ((current + 1) / TOTAL * 100) + '%';
+  counter.textContent = `${current + 1} / ${TOTAL}`;
+  titleBar.textContent = slideEls[current].dataset.title || '';
+  navPrev.classList.toggle('disabled', current === 0);
+  navNext.classList.toggle('disabled', current === TOTAL - 1);
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i === current));
+}
+
+navPrev.onclick = () => goTo(current - 1);
+navNext.onclick = () => goTo(current + 1);
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
+});
+requestAnimationFrame(() => goTo(0));
+
+function onSlideEnter(n) {
+  if (slideEls[n].dataset.title === 'Os 4 Modos de Ativação' && !document.getElementById('mode-detail').classList.contains('show')) {
+    selMode('always');
+  }
+}
+
+// ══════════════════════════ MODOS DE ATIVAÇÃO ══════════════════════════
+const modeData = {
+  always: {
+    color: '#f472b6',
+    title: '🔒 Sempre ativa (Always Apply)',
+    front: '<span class="k">alwaysApply</span>: <span class="s">true</span>',
+    pts: [
+      'Entra no contexto em <strong>toda</strong> requisição, sem exceção',
+      'É a única que você tem certeza absoluta que foi lida',
+      'Também é a única que cobra pedágio o dia inteiro'
+    ],
+    use: 'Use para: convenções de linguagem, padrão de nomes, restrições universais. Coisas que valem em qualquer arquivo do projeto.',
+    warn: 'Mantenha curta. Isso aqui é o seu orçamento mais caro.'
+  },
+  glob: {
+    color: '#00e5ff',
+    title: '🎯 Por arquivo (Auto Attached)',
+    front: '<span class="k">globs</span>: <span class="s">["src/dq/checks.py"]</span>\n<span class="k">alwaysApply</span>: <span class="s">false</span>',
+    pts: [
+      'Entra automaticamente quando o agente lê ou escreve um arquivo que casa com o glob',
+      'Fora desses arquivos, ocupa exatamente zero de contexto',
+      'É o modo que justifica o formato .mdc existir'
+    ],
+    use: 'Use para: padrões de teste, convenções de um módulo específico, regras de uma camada da aplicação.',
+    warn: 'É o modo que a gente vai usar hoje no checks.mdc — e o que você mais vai usar na vida real.'
+  },
+  agent: {
+    color: '#7c3aed',
+    title: '🤔 Sob demanda (Agent Requested)',
+    front: '<span class="k">description</span>: <span class="s">"Guia de migração de schema"</span>\n<span class="k">alwaysApply</span>: <span class="s">false</span>',
+    pts: [
+      'Só a <strong>descrição</strong> entra no contexto; o corpo fica de fora',
+      'O agente lê a descrição e decide sozinho se vale a pena carregar o resto',
+      'Custo baixo por padrão, conteúdo completo quando necessário'
+    ],
+    use: 'Use para: regras longas e ocasionais — guias de migração, checklists de debug, procedimentos raros.',
+    warn: 'A descrição vira a interface da regra. Se ela for vaga, o agente nunca vai puxar o arquivo.'
+  },
+  manual: {
+    color: '#00ff88',
+    title: '✋ Manual (@nome-da-regra)',
+    front: '<span class="c"># sem globs, sem alwaysApply</span>\n<span class="k">description</span>: <span class="s">"Checklist de release"</span>',
+    pts: [
+      'Nunca entra sozinha — só quando você digita <code>@nome-da-regra</code> no chat',
+      'Controle total: você decide o momento exato',
+      'Zero custo enquanto não é chamada'
+    ],
+    use: 'Use para: procedimentos que você executa de propósito — checklist de release, refatoração pontual, roteiro de onboarding.',
+    warn: 'O risco é o esquecimento: regra que ninguém lembra de chamar é regra que não existe.'
+  }
+};
+
+function selMode(key) {
+  document.querySelectorAll('.msel').forEach(c => c.classList.remove('sel'));
+  document.getElementById('m-'+key).classList.add('sel');
+  const d = modeData[key];
+  const el = document.getElementById('mode-detail');
+  el.innerHTML = `
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.02rem;color:${d.color};margin-bottom:14px;">${d.title}</div>
+    <div class="code" style="margin-bottom:14px;border-color:${d.color}44;">${d.front}</div>
+    ${d.pts.map(p=>`<div style="font-size:.85rem;color:var(--muted);margin-bottom:7px;line-height:1.55;">• ${p}</div>`).join('')}
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:.84rem;color:var(--text);line-height:1.6;">${d.use}</div>
+    <div style="margin-top:8px;font-size:.8rem;color:${d.color};font-style:italic;line-height:1.6;">⚡ ${d.warn}</div>
+  `;
+  el.className = 'show';
+}
+
+// ══════════════════════════ TUTORIAL (acordeão) ══════════════════════════
+function tut(head) {
+  const body = head.nextElementSibling;
+  const arrow = head.querySelector('.tut-tog');
+  const open = body.classList.toggle('open');
+  head.parentElement.classList.toggle('open', open);
+  arrow.style.transform = open ? 'rotate(180deg)' : '';
+}
+</script>
+</body>
+</html>
