@@ -1,0 +1,24 @@
+---
+description: Padrão para escrever e registrar checks de qualidade
+globs: ["src/dq/checks.py", "tests/test_checks.py"]
+alwaysApply: false
+---
+
+# Como escrever um check
+
+## Assinatura
+def check_<nome>(df: pd.DataFrame) -> CheckResult
+
+Sem parâmetros extras. Se precisar de configuração,
+use valor padrão nomeado — nunca segundo posicional.
+
+## Passos ao adicionar um check
+1. Escreva a função em `src/dq/checks.py`.
+2. Registre no dicionário `CHECKS` no fim do arquivo.
+3. Escreva o teste com um DataFrame construído na mão.
+4. Não toque em `cli.py` — ele já itera sobre `CHECKS`.
+
+## Regras do CheckResult
+- `ok` é True quando NADA foi encontrado.
+- `total` é contagem de ocorrências, não de linhas.
+- `detalhe` é uma frase curta em português, sem quebra de linha.
