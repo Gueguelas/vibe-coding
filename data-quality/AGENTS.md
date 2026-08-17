@@ -43,3 +43,4 @@ data/              → somente leitura, nunca sobrescrever.
 - docs/adr/ — por que decidimos assim
 - rules/tests.md — leia antes de escrever ou alterar qualquer teste
 - rules/checks.md — execute antes de dizer que uma etapa terminou
+- rules/handoff.md — siga este formato ao gerar o handoff no fim da sessão
