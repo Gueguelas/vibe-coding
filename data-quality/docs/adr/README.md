@@ -8,4 +8,3 @@ raciocínio por trás da decisão.
 |-----|-------------------------------------|--------|
 | 001 | Domínio isolado de infraestrutura   | aceito |
 | 002 | Pontos como lançamentos imutáveis   | aceito |
-| 003 | Expiração de pontos em 12 meses     | aceito |
