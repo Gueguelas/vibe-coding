@@ -29,3 +29,15 @@ data/              → somente leitura, nunca sobrescrever.
 - Não crie `utils.py`, `helpers.py` ou `common.py`.
 - Não escreva nem modifique nada em `data/`.
 - Não refatore código fora do pedido atual.
+
+## Arquitetura
+
+- Domínio em src/pontos/dominio/, sem import de banco, web ou I/O. (ADR-001)
+- Pontos são lançamentos imutáveis. Não existe campo de saldo. (ADR-002)
+- Correção nunca altera lançamento: gera lançamento novo. (ADR-002)
+- Stack: Python, FastAPI, SQLite. Sem ORM.
+
+## Onde olhar
+
+- docs/PRD.md — o que o negócio quer
+- docs/adr/ — por que decidimos assim
