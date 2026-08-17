@@ -1,6 +1,10 @@
 # Handoff de fim de sessão
 
-Ao encerrar uma sessão, gere docs/handoff.md com estas seções,
+Ao USUÁRIO PEDIR EM UMA SESSÃO:
+- gere docs/handoff/handoff-{resumo_basico_da_sessao}.md
+SENDO {resumo_basico_da_sessao} - um resumo bem simples do que foi pedido pelo usuário
+
+Com estas seções,
 nesta ordem:
 
 ## Onde parei

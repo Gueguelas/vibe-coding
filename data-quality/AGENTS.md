@@ -41,6 +41,7 @@ data/              → somente leitura, nunca sobrescrever.
 
 - docs/PRD.md — o que o negócio quer
 - docs/adr/ — por que decidimos assim
+- docs/handoff/ - onde eu parei no desenvolvimento
 - rules/tests.md — leia antes de escrever ou alterar qualquer teste
 - rules/checks.md — execute antes de dizer que uma etapa terminou
 - rules/handoff.md — siga este formato ao gerar o handoff no fim da sessão
