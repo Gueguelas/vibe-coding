@@ -32,6 +32,8 @@ atendente não sabe responder.
 total de pontos emitidos e ainda não resgatados. Esse número entra no
 balanço como passivo e é auditado.
 
+Pontos expiram 12 meses após a compra que os originou.
+
 **Disputas.** Um cliente pode contestar seu saldo meses depois do fato.
 Precisamos conseguir reconstruir o que aconteceu na conta dele em
 qualquer data passada.
