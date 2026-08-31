@@ -25,13 +25,13 @@ data/              → somente leitura, nunca sobrescrever.
 - Nada de `print` dentro de `checks.py`. Quem imprime é o `cli.py`.
 
 ## O que NÃO fazer
-- Não adicione dependências. `pandas` e `pytest` bastam.
 - Não crie `utils.py`, `helpers.py` ou `common.py`.
 - Não escreva nem modifique nada em `data/`.
 - Não refatore código fora do pedido atual.
 
 ## Arquitetura
 
+- docs/adr/
 - Domínio em src/pontos/dominio/, sem import de banco, web ou I/O. (ADR-001)
 - Pontos são lançamentos imutáveis. Não existe campo de saldo. (ADR-002)
 - Correção nunca altera lançamento: gera lançamento novo. (ADR-002)
