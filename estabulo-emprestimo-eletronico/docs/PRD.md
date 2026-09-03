@@ -1,4 +1,4 @@
-# PRD — Empréstimo de Equipamentos Internos
+# PRD — Stable
 Versão 1 · escrito pelo time de Operações
 
 ## Problema

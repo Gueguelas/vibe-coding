@@ -1,7 +1,7 @@
-# EMPREST.AI — Especificação de layout (v1)
+# Stable — Especificação de layout (v1)
 
 Documento de handoff para reproduzir o layout do app de empréstimo de equipamentos de TI.
-Base visual: design system **Nocturne** (interface escura, densa, acento usado como linha e brilho — nunca como preenchimento sólido), com o acento e a tipografia substituídos pela marca EMPREST.AI.
+Base visual: design system **Nocturne** (interface escura, densa, acento usado como linha e brilho — nunca como preenchimento sólido), com o acento e a tipografia substituídos pela marca Stable.
 
 ---
 
