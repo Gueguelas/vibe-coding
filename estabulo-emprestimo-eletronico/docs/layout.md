@@ -84,7 +84,7 @@ Sempre por transparência sobre `--color-text`, nunca um cinza novo:
 | Kicker / cabeçalho de tabela | 11–11.5px, `letter-spacing: 0.08–0.09em`, `text-transform: uppercase` |
 | Micro-rótulo (patrimônio, dica) | 11–12px |
 
-Marca: `EMPREST` peso 700 + `.AI` no acento, `letter-spacing: 0.02em` — 17px na tela de login, 15px na barra de navegação.
+Marca: `Stable` peso 700, `letter-spacing: 0.02em` — 17px na tela de login, 15px na barra de navegação.
 
 ---
 

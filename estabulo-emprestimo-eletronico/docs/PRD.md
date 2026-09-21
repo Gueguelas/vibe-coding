@@ -33,3 +33,10 @@ registrada se alguém lembrar de atualizar a linha.
 ## Como saberemos que deu certo
 Operações consegue abandonar a planilha depois de duas semanas
 de uso.
+
+
+## Regras de negócio (contrato do PRD​)
+- Cada pessoa pode estar com no máximo **3 itens** ao mesmo tempo​.
+- Prazo padrão de devolução: **14 dias**​.
+- Quem tem item **em atraso** não pode pegar outro emprestado (UI bloqueia​)​.
+- Equipamento **em manutenção** nunca aparece como disponível​.
