@@ -18,8 +18,11 @@ teste, build e migration vivem nos repositórios de front e de API — o que
 rodar antes de declarar uma tarefa pronta está em docs/rules/checks.md, e o
 procedimento de schema está em docs/rules/migration.md.
 
-Git: nunca commitar nem dar push sem pedido explícito; deixe as mudanças em
-staging para revisão (ver docs/rules/RESTRICTIONS.md, seção Git).
+Git: o contrato de operação vigente está em docs/rules/operacoes.md, seção
+Git — commit por tarefa com a mensagem citando tarefa e critério de
+aceitação, push só em branch, nunca na produção. Enquanto
+docs/rules/RESTRICTIONS.md pedir pedido explícito para commit, em caso de
+dúvida PARE e pergunte — não escolha um dos dois por conta própria.
 
 ## Estrutura
 ```
@@ -30,6 +33,14 @@ docs/adr/001-stack.md      → decisões de arquitetura e consequências
 docs/rules/RESTRICTIONS.md → o que o agente não pode fazer (vale sempre)
 docs/rules/checks.md       → o que precisa passar antes de dizer "pronto"
 docs/rules/migration.md    → procedimento para qualquer mudança de schema
+docs/rules/operacoes.md    → contrato de operação: Git, níveis de autorização
+                             (livre / avisar depois / pedir antes / proibido)
+docs/rules/spec-flow.md    → fluxo de funcionalidade nova: spec → plano → tarefas
+docs/rules/tests.md        → regras para escrever, alterar ou remover testes
+docs/rules/skill.md        → quando capturar e como reusar skills
+docs/rules/handoff.md      → o que escrever no handoff ao fechar a sessão
+docs/rules/clean-code.md   → guia de referência Clean Code TypeScript (consulta)
+docs/skills/               → skills capturados: procedimentos que já funcionaram
 docs/handoff/              → onde a sessão parou (escrever ao fim de cada sessão)
 CLAUDE.md                  → aponta para este arquivo
 .env                       → ignorado pelo git — nunca versionar
@@ -61,6 +72,27 @@ CLAUDE.md                  → aponta para este arquivo
   mesmo trivial: siga docs/rules/migration.md — plano de DDL na resposta,
   PARE para aprovação, migration via Prisma com RLS na mesma migration,
   banco local apenas.
+- **Antes de qualquer ação sobre arquivos, dependência ou migração**:
+  consulte o nível de autorização em docs/rules/operacoes.md — "pedir antes"
+  significa descrever o que pretende fazer e PARE; "proibido" não se executa
+  mesmo se pedido no meio da tarefa.
+- **Funcionalidade nova do PRD**: siga docs/rules/spec-flow.md — crie a
+  pasta de spec no padrão NNN-nome-curto, liste as perguntas que o PRD não
+  responde e espere as respostas, depois plan.md e tasks.md; uma tarefa por
+  vez, com checks ao fim de cada uma.
+- **Ao escrever, alterar ou remover testes**: siga docs/rules/tests.md —
+  banco local apenas (nunca o remoto), nome do teste cita o critério
+  (test_ca_xx), teste de endpoint verifica status E corpo, tabela com
+  política de acesso tem um teste que prova o bloqueio.
+- **Procedimento que funcionou de primeira e vai se repetir**: procure um
+  skill em docs/skills/ antes de improvisar e capture o novo —
+  docs/rules/skill.md.
+- **Ao fechar a sessão** ("vamos fechar" ou fim de uma tarefa do plano):
+  siga docs/rules/handoff.md — sobrescreva o handoff.md da raiz com, no
+  máximo, 25 linhas sobre onde parou.
+- **Ao escrever código**: use docs/rules/clean-code.md como referência de
+  consulta — guia, não regra dura; as convenções deste arquivo e do PRD
+  vencem quando entrarem em conflito.
 
 ## O que NÃO fazer
 Resumo — a fonte de verdade é docs/rules/RESTRICTIONS.md; leia-o por inteiro.
@@ -73,6 +105,11 @@ Resumo — a fonte de verdade é docs/rules/RESTRICTIONS.md; leia-o por inteiro.
 - Não refatorar código fora do pedido atual.
 - Não rodar deploy, alterar configuração da Vercel nem tocar no projeto
   Supabase remoto (SQL, schema ou dado).
+- Não instalar dependência, criar ou alterar migration, deletar ou renomear
+  arquivo sem pedir antes (docs/rules/operacoes.md); variável de ambiente e
+  config de deploy são proibidas, mesmo se pedidas no meio da tarefa.
+- Não capturar skill sem execução real por trás nem começar funcionalidade
+  sem a pasta de spec no padrão (docs/rules/skill.md, docs/rules/spec-flow.md).
 
 ## Onde olhar
 - docs/PRD.md — o que o negócio quer
@@ -81,4 +118,11 @@ Resumo — a fonte de verdade é docs/rules/RESTRICTIONS.md; leia-o por inteiro.
 - docs/rules/RESTRICTIONS.md — o que não fazer; leia antes de qualquer mexida
 - docs/rules/checks.md — verificação de fim de tarefa
 - docs/rules/migration.md — procedimento de mudança de schema
+- docs/rules/operacoes.md — níveis de autorização e contrato de Git
+- docs/rules/spec-flow.md — por onde começar uma funcionalidade nova
+- docs/rules/tests.md — regras para qualquer teste
+- docs/rules/skill.md — quando capturar e reusar skills
+- docs/rules/handoff.md — o que escrever ao fechar a sessão
+- docs/rules/clean-code.md — referência de código limpo em TypeScript
+- docs/skills/ — procedimentos já provados no projeto
 - docs/handoff/ — onde eu parei no desenvolvimento
