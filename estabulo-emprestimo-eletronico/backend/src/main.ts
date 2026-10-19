@@ -26,7 +26,7 @@ async function bootstrap(): Promise<void> {
   });
 
   await app.listen(env.PORT);
-  console.log(`Stable API rodando em http://localhost:${env.PORT}/v1`);
+  console.log(`Stable API em http://localhost:${env.PORT} — GET /health e /v1`);
 }
 
 void bootstrap();
