@@ -20,12 +20,12 @@ alwaysApply: true
 
 | ação                                        | nível          |
 |---------------------------------------------|----------------|
-| Editar arquivo existente dentro do escopo d | livre          |
+| Editar arquivo existente dentro do escopo da tarefa | livre   |
 | Criar arquivo novo                          | avisar depois  |
 | Deletar ou renomear arquivo                 | pedir antes    |
 | Instalar ou atualizar dependência           | pedir antes    |
 | Criar ou alterar migration                  | pedir antes    |
-| Mexer em variável de ambiente, config de de | proibido       |
+| Mexer em variável de ambiente, config de deploy | proibido   |
 
 O que cada nível significa:
 - livre — faça e siga em frente.

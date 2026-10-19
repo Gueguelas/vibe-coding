@@ -316,7 +316,7 @@
 ## O que este ADR não decide
 
 - Modelagem de domínio, entidades e relacionamentos.
-- Design system, tokens e identidade visual.
+- Design system, tokens e identidade visual — decididos no ADR-002.
 - Papéis e matriz de permissão dentro de cada tenant.
 - Provisionamento de tenant: quem cria, como se convida usuário.
 - Provedor de e-mail transacional e demais integrações.

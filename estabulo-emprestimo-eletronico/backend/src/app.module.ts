@@ -1,16 +1,17 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core";
 import { ZodSerializerInterceptor } from "nestjs-zod";
-import { ENV, EnvModule } from "./env";
+import { EnvModule } from "./env";
 import { PrismaModule } from "./prisma/prisma.module";
 import { JwtGuard } from "./auth/jwt.guard";
 import { ProblemDetailsFilter } from "./erros/problem-details.filter";
 import { ContextoMiddleware } from "./request-context/contexto.middleware";
 import { MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { EquipamentosModule } from "./equipamentos/equipamentos.module";
+import { HealthModule } from "./health/health.module";
 
 @Module({
-  imports: [EnvModule, PrismaModule, EquipamentosModule],
+  imports: [EnvModule, PrismaModule, EquipamentosModule, HealthModule],
   providers: [
     // Guard nomeado + APP_GUARD via useExisting: um único guard no container,
     // o que permite substituí-lo nos testes (overrideProvider(JwtGuard)).

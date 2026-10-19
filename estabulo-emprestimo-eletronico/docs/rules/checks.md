@@ -27,8 +27,8 @@ Sempre que você for dizer "pronto", "implementado" ou "funcionando".
    Build que quebra na Vercel é o feedback mais lento e mais caro
    deste projeto.
 4. Rode `git status --short`. Só podem aparecer arquivos do escopo da
-   tarefa. Neste repositório de docs, é o único check aplicável —
-   rode-o mesmo assim.
+   tarefa. Para tarefa só de documentação ou protótipo, este é o único
+   check aplicável — rode-o mesmo assim.
 5. Diga qual critério esta tarefa atende, citando o item do PRD
    (seção "O que precisa existir" ou "Regras que Operações já
    decidiu") ou o CA-xx correspondente, se numerado.

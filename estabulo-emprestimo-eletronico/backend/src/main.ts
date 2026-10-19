@@ -19,7 +19,7 @@ async function bootstrap(): Promise<void> {
       genReqId: () => crypto.randomUUID()
     })
   );
-  app.setGlobalPrefix("v1");
+  app.setGlobalPrefix("v1", { exclude: ["health"] });
   app.enableCors({
     origin: process.env.FRONT_ORIGIN?.split(",") ?? true,
     credentials: true

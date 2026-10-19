@@ -1,9 +1,11 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { Request } from "express";
 import { Inject } from "@nestjs/common";
 import { ENV, Env } from "../env";
 import { contextoAtual } from "../request-context/contexto";
+import { ROTA_PUBLICA } from "./publico";
 
 // Valida o JWT do Supabase Auth contra o JWKS e resolve tenant_id do claim.
 // ADR-001, seções 6 e 7: o tenant vem do token, nunca do cliente.
@@ -12,7 +14,10 @@ export class JwtGuard implements CanActivate {
   private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
   private readonly issuer: string;
 
-  constructor(@Inject(ENV) env: Env) {
+  constructor(
+    private readonly reflector: Reflector,
+    @Inject(ENV) env: Env
+  ) {
     this.jwks = createRemoteJWKSet(
       new URL(`${env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`)
     );
@@ -20,6 +25,14 @@ export class JwtGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const publica = this.reflector.getAllAndOverride<boolean>(ROTA_PUBLICA, [
+      context.getHandler(),
+      context.getClass()
+    ]);
+    if (publica) {
+      return true;
+    }
+
     const req = context.switchToHttp().getRequest<Request>();
     const cabecalho = req.headers.authorization;
     const token = cabecalho?.replace(/^Bearer\s+/i, "");

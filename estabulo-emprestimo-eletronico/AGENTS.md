@@ -9,14 +9,18 @@ registrada se alguém lembrar.
 - **Colaborador**: vê o catálogo, solicita empréstimo de item disponível e devolve o que está com ele — vê somente os próprios empréstimos.
 - **Operações**: cadastra equipamentos, vê todos os empréstimos em aberto e registra devolução no balcão.
 
-Estado atual: este repositório contém só documentação. O código vive em dois
-repositórios separados (front e API; ver docs/adr/001-stack.md).
+Estado atual: este repositório contém a documentação e o protótipo navegável
+(`prototipo/`). A decisão do ADR-001 é viver com dois repositórios separados
+(front e API), mas o código da API está versionado aqui em `backend/` e o
+front ainda não existe (`frontend/` vazio) — mover a API para o repositório
+próprio é pendência, não mudança de decisão.
 
 ## Comandos
-Não há build nem teste neste repositório: ele é documentação. Os comandos de
-teste, build e migration vivem nos repositórios de front e de API — o que
-rodar antes de declarar uma tarefa pronta está em docs/rules/checks.md, e o
-procedimento de schema está em docs/rules/migration.md.
+Documentação e protótipo não têm build: os comandos de teste, build e
+migration vivem junto com o código — hoje em `backend/` (API) e, quando
+existir, no repositório de front. O que rodar antes de declarar uma tarefa
+pronta está em docs/rules/checks.md, e o procedimento de schema está em
+docs/rules/migration.md.
 
 Git: o contrato de operação vigente está em docs/rules/operacoes.md, seção
 Git — commit por tarefa com a mensagem citando tarefa e critério de
@@ -27,9 +31,10 @@ dúvida PARE e pergunte — não escolha um dos dois por conta própria.
 ## Estrutura
 ```
 docs/PRD.md                → o que o negócio quer: requisitos e regras
-docs/layout.md             → especificação visual (design system Nocturne:
-                             acento teal do Stable, Raleway, dark) — handoff do layout
 docs/adr/001-stack.md      → decisões de arquitetura e consequências
+docs/adr/002-layout-design-system.md → design system Nocturne (acento teal
+                             do Stable, Raleway, dark), páginas e regras
+                             visuais — antigo docs/layout.md, promovido a ADR
 docs/rules/RESTRICTIONS.md → o que o agente não pode fazer (vale sempre)
 docs/rules/checks.md       → o que precisa passar antes de dizer "pronto"
 docs/rules/migration.md    → procedimento para qualquer mudança de schema
@@ -42,9 +47,14 @@ docs/rules/handoff.md      → o que escrever no handoff ao fechar a sessão
 docs/rules/clean-code.md   → guia de referência Clean Code TypeScript (consulta)
 docs/skills/               → skills capturados: procedimentos que já funcionaram
 docs/handoff/              → onde a sessão parou (escrever ao fim de cada sessão)
+prototipo/                 → protótipo navegável do layout (catalogo.html)
+backend/                   → código da API (NestJS + Prisma); o repo oficial é
+                             separado, ver "Estado atual" — pendência
+frontend/                  → front (vazio nesta cópia)
 CLAUDE.md                  → aponta para este arquivo
 .env                       → ignorado pelo git — nunca versionar
 .env.example               → modelo das variáveis esperadas
+skills/                    → Pasta de skils para serem utilizadas se necessário 
 ```
 
 ## Convenções obrigatórias
@@ -113,7 +123,7 @@ Resumo — a fonte de verdade é docs/rules/RESTRICTIONS.md; leia-o por inteiro.
 
 ## Onde olhar
 - docs/PRD.md — o que o negócio quer
-- docs/layout.md — como a UI deve se parecer e se comportar
+- docs/adr/002-layout-design-system.md — como a UI deve se parecer e se comportar
 - docs/adr/001-stack.md — por que decidimos assim e as consequências
 - docs/rules/RESTRICTIONS.md — o que não fazer; leia antes de qualquer mexida
 - docs/rules/checks.md — verificação de fim de tarefa

@@ -16,9 +16,9 @@ alwaysApply: true
   perguntas e espere. (Ex.: quem provisiona tenant, quem convida
   usuário, provedor de e-mail — o PRD não cobre.)
 - Não escolha biblioteca que não esteja no ADR-001. Proponha e espere.
-- Não decida por conta própria o que o PRD e o layout deixaram em
+- Não decida por conta própria o que o PRD e o ADR-002 deixaram em
   aberto (papéis, matriz de permissão, tokens visuais fora do
-  docs/layout.md).
+  docs/adr/002-layout-design-system.md).
 
 ## Escopo
 

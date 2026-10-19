@@ -1,7 +1,7 @@
 import { PrismaClient, Papel, Categoria, SituacaoItem } from "@prisma/client";
 
 // Seed idempotente (ADR-001, seção 5): cria o tenant suporte_ti e os dados
-// de exemplo do layout.md (seção 9), referência 31/08/2026.
+// de exemplo do ADR-002 (seção 10), referência 31/08/2026.
 // Rodar de novo não duplica nada — tudo por upsert com id fixo.
 const prisma = new PrismaClient();
 
@@ -56,7 +56,7 @@ interface Emprestimo {
   prazo: string;
 }
 
-// Empréstimos em aberto do layout.md (seção 9). O de Camila está em atraso.
+// Empréstimos em aberto do ADR-002 (seção 10). O de Camila está em atraso.
 const EMPRESTIMOS: Emprestimo[] = [
   { id: "00000000-0000-4000-8000-000000000201", userKey: "ana", equipamentoId: "00000000-0000-4000-8000-000000000105", retirada: "2026-08-29", prazo: "2026-09-12" },
   { id: "00000000-0000-4000-8000-000000000202", userKey: "ana", equipamentoId: "00000000-0000-4000-8000-000000000107", retirada: "2026-08-22", prazo: "2026-09-05" },

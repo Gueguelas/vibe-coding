@@ -41,6 +41,7 @@ migration e o seed de verdade (nunca Prisma mockado) e derrubam o container no f
 
 ## Rotas
 
+- `GET /health` — liveness, sem JWT. Resposta `{ "status": "ok" }`.
 - `GET /v1/equipamentos` — catálogo com situação derivada (`disponivel`,
   `emprestado` com quem e prazo, `em_manutencao` com observação). Requer
   `Authorization: Bearer <token do Supabase>`. Paginação por cursor

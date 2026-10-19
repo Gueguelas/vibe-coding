@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* Tokens — docs/layout.md seções 1 e 3 (design system Nocturne + acento Stable) */
+  /* Tokens — docs/adr/002-layout-design-system.md seções 2 e 4 (design system Nocturne + acento Stable) */
   :root {
     --color-bg: #161826;
     --color-surface: #232532;
@@ -36,7 +36,7 @@
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
-  /* Barra de navegação — docs/layout.md seção 6 */
+  /* Barra de navegação — docs/adr/002-layout-design-system.md seção 7 */
   .nav {
     position: sticky;
     top: 0;
@@ -166,7 +166,7 @@
   }
   .search::placeholder { color: var(--color-text); opacity: 0.4; }
 
-  /* Chips de filtro — docs/layout.md seção 7, regra 9 */
+  /* Chips de filtro — docs/adr/002-layout-design-system.md seção 8, item 9 */
   .filters { display: flex; gap: 8px; margin-bottom: 22px; }
   .chip {
     background: transparent;
@@ -186,7 +186,7 @@
     background: rgba(47, 184, 172, 0.10);
     opacity: 1;
   }
-  /* Grade e card do catálogo — docs/layout.md seções 3 e 5.2 */
+  /* Grade e card do catálogo — docs/adr/002-layout-design-system.md seções 4 e 6.2 */
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(292px, 1fr));
@@ -233,7 +233,7 @@
     opacity: 0.72;
   }
   .card .btn { margin-top: auto; }
-  /* Pill de situação — cores semânticas do layout.md */
+  /* Pill de situação — cores semânticas do ADR-002 (seção 2) */
   .pill {
     border-radius: 999px;
     padding: 3px 9px;
@@ -258,7 +258,7 @@
     border: 1px solid rgba(154, 160, 173, 0.30);
   }
 
-  /* Botões — docs/layout.md seção 4 (primário é contorno, nunca preenchimento) */
+  /* Botões — docs/adr/002-layout-design-system.md seção 5 (primário é contorno, nunca preenchimento) */
   .btn {
     height: 36px;
     border-radius: var(--radius-md);
@@ -288,7 +288,7 @@
     cursor: not-allowed;
   }
 
-  /* Estado vazio da busca — docs/layout.md seção 7, regra 8 */
+  /* Estado vazio da busca — docs/adr/002-layout-design-system.md seção 8, item 8 */
   .empty {
     border: 1px dashed var(--color-divider);
     border-radius: var(--radius-lg);
@@ -308,7 +308,7 @@
 </head>
 <body>
 
-<!-- Navegação: papel Colaborador — abas Catálogo, Meus empréstimos (docs/layout.md seção 6) -->
+<!-- Navegação: papel Colaborador — abas Catálogo, Meus empréstimos (docs/adr/002-layout-design-system.md seção 7) -->
 <header class="nav">
   <div class="nav-brand">
     <span class="nav-mark"><i></i></span>
@@ -353,7 +353,7 @@
 </main>
 
 <script>
-  // Dados de exemplo — docs/layout.md seção 9. Situação derivada no render.
+  // Dados de exemplo — docs/adr/002-layout-design-system.md seção 10. Situação derivada no render.
   const itens = [
     { nome: "Notebook Dell Latitude 5450", categoria: "Notebook", patrimonio: "TI-0142", situacao: "disponivel" },
     { nome: "MacBook Pro 14 M3", categoria: "Notebook", patrimonio: "TI-0088", situacao: "emprestado", detalhe: "Com Marcos Lemos · devolver até 07/09" },
