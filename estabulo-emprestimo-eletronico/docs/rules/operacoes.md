@@ -9,11 +9,13 @@ alwaysApply: true
 ## Git
 > leitor: agente
 
-- Commit: O agente commita cada tarefa
-- Push: O agente pode fazer push em branch, nunca na produção
-- A mensagem de commit cita a tarefa e o critério de aceitação.
-- Um commit por tarefa. Nunca junte código e mudança de regra
-  no mesmo commit.
+- Commit e push só com pedido explícito do usuário, conforme
+  `RESTRICTIONS.md`. Não faça push na produção.
+- Quando o usuário autorizar um commit, faça um por tarefa e use uma
+  mensagem que cite a tarefa e o critério de aceitação.
+- Nunca junte código e mudança de regra no mesmo commit.
+- Sem autorização para commit, deixe as alterações em staging para
+  revisão, conforme `AGENTS.md`.
 
 ## Autorização por tipo de ação
 > leitor: agente

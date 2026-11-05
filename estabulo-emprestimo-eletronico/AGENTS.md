@@ -9,24 +9,26 @@ registrada se alguém lembrar.
 - **Colaborador**: vê o catálogo, solicita empréstimo de item disponível e devolve o que está com ele — vê somente os próprios empréstimos.
 - **Operações**: cadastra equipamentos, vê todos os empréstimos em aberto e registra devolução no balcão.
 
-Estado atual: este repositório contém a documentação e o protótipo navegável
-(`prototipo/`). A decisão do ADR-001 é viver com dois repositórios separados
-(front e API), mas o código da API está versionado aqui em `backend/` e o
-front ainda não existe (`frontend/` vazio) — mover a API para o repositório
-próprio é pendência, não mudança de decisão.
+Estado atual: este checkout contém documentação, protótipo, API em `backend/`
+e front em `frontend/`. A separação em dois repositórios continua sendo a
+decisão do ADR-001; a migração para repositórios próprios ainda é pendência.
+A API implementa health check e leitura paginada do catálogo. O front tem
+login real quando configurado e consulta esse catálogo; empréstimos,
+devoluções, Operações e cadastro ainda são demonstrações em memória. Portanto,
+o produto descrito no PRD ainda não está completo nem pronto para substituir a
+planilha.
 
 ## Comandos
-Documentação e protótipo não têm build: os comandos de teste, build e
-migration vivem junto com o código — hoje em `backend/` (API) e, quando
-existir, no repositório de front. O que rodar antes de declarar uma tarefa
-pronta está em docs/rules/checks.md, e o procedimento de schema está em
+Documentação e protótipo não têm build. Os comandos de teste, build e lint
+vivem junto com o código em `backend/` (API) e `frontend/` (front); o front
+também tem E2E com Playwright. O que rodar antes de declarar uma tarefa pronta
+está em docs/rules/checks.md, e o procedimento de schema está em
 docs/rules/migration.md.
 
-Git: o contrato de operação vigente está em docs/rules/operacoes.md, seção
-Git — commit por tarefa com a mensagem citando tarefa e critério de
-aceitação, push só em branch, nunca na produção. Enquanto
-docs/rules/RESTRICTIONS.md pedir pedido explícito para commit, em caso de
-dúvida PARE e pergunte — não escolha um dos dois por conta própria.
+Git: siga docs/rules/RESTRICTIONS.md e docs/rules/operacoes.md. Commit e push
+exigem pedido explícito do usuário; não faça push na produção. Ao receber
+autorização para commitar, faça um commit por tarefa com a mensagem citando a
+tarefa e o critério de aceitação.
 
 ## Estrutura
 ```
@@ -48,9 +50,9 @@ docs/rules/clean-code.md   → guia de referência Clean Code TypeScript (consul
 docs/skills/               → skills capturados: procedimentos que já funcionaram
 docs/handoff/              → onde a sessão parou (escrever ao fim de cada sessão)
 prototipo/                 → protótipo navegável do layout (catalogo.html)
-backend/                   → código da API (NestJS + Prisma); o repo oficial é
-                             separado, ver "Estado atual" — pendência
-frontend/                  → front (vazio nesta cópia)
+backend/                   → API (NestJS + Prisma); separação em repo próprio
+                             é pendência, não mudança do ADR-001
+frontend/                  → SPA React/Vite; telas de empréstimo ainda usam mocks
 CLAUDE.md                  → aponta para este arquivo
 .env                       → ignorado pelo git — nunca versionar
 .env.example               → modelo das variáveis esperadas
