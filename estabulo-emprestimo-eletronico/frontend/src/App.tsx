@@ -1,4 +1,6 @@
-// Placeholder da fundação: as páginas entram nas tarefas 6 e 7 (specs seguintes).
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router";
+
 export function App() {
-  return <main>Stable</main>;
+  return <RouterProvider router={router} />;
 }

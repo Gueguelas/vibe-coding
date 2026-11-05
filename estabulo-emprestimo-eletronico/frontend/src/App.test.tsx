@@ -1,12 +1,16 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { App } from "./App";
+import { useAuth } from "./stores/auth";
 
-// CA-01 (pré-condição): a aplicação renderiza sem erro com TypeScript strict.
 describe("test_ca_01_fundacao", () => {
-  it("test_ca_01_app_renderiza_sem_erro", () => {
+  beforeEach(() => {
+    useAuth.setState({ usuario: null, erro: null });
+  });
+
+  it("test_ca_01_login_renderiza_sem_sessao", async () => {
     render(<App />);
-    expect(screen.getByText("Stable")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Entrar" })).toBeInTheDocument();
   });
 });

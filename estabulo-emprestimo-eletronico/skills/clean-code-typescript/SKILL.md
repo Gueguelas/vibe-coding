@@ -26,6 +26,7 @@ Apply this workflow to make TypeScript changes easier to understand and maintain
 
 The guidance in [clean-code](../../docs/rules/clean-code.md) is a reference, not a hard style mandate. Project conventions, the PRD, ADRs, specs, and repository restrictions take precedence. Do not start implementation without the required approved plan or spec; stop and ask when a project rule requires prior approval.
 
-## Completion
+## 
+
 
 Report the criterion addressed, the files changed, the checks run and their results, and any remaining blockers. Do not claim completion when a required check fails.
