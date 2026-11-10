@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
+<<<<<<< HEAD
 import { acaoDoCard, filtrarEquipamentos, resumoEmprestimos } from "./regras";
+=======
+import {
+  acaoDoCard,
+  filtrarEquipamentos,
+  resumoEmprestimos,
+  situacaoDoPrazo
+} from "./regras";
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
 import type { Equipamento } from "@/api/schemas";
 import type { Emprestimo } from "@/stores/emprestimosMock";
 
@@ -74,6 +83,56 @@ describe("test_ca_09_situacoes_de_equipamento", () => {
       ).texto
     ).toBe("Emprestado");
   });
+<<<<<<< HEAD
+=======
+
+  it("test_ca_09_item_ja_emprestado_para_usuario_tem_precedencia", () => {
+    const meuEmprestimo = {
+      id: "loan",
+      equipamento: "Notebook de teste",
+      patrimonio: "TI-0142",
+      pessoa: "Ana Ribeiro",
+      retirada: "2026-08-30",
+      prazo: "2026-09-10",
+      devolvido: false,
+      categoria: "notebook" as const
+    };
+    expect(acaoDoCard(equipamento, "Ana Ribeiro", [meuEmprestimo]).texto).toBe(
+      "Está com você"
+    );
+    expect(
+      acaoDoCard(
+        { ...equipamento, situacao: "em_manutencao" },
+        "Ana Ribeiro",
+        [meuEmprestimo]
+      ).texto
+    ).toBe("Indisponível");
+  });
+
+  it("test_ca_08_atraso_bloqueia_mesmo_sem_atingir_limite", () => {
+    const atrasado: Emprestimo = {
+      id: "late",
+      equipamento: "Item vencido",
+      patrimonio: "TI-0001",
+      pessoa: "Ana Ribeiro",
+      retirada: "2026-08-01",
+      prazo: "2026-08-30",
+      devolvido: false,
+      categoria: "notebook"
+    };
+    expect(acaoDoCard(equipamento, "Ana Ribeiro", [atrasado]).texto).toBe(
+      "Bloqueado por atraso"
+    );
+  });
+});
+
+describe("test_ca_07_prazo_a_vencer", () => {
+  it("test_ca_07_define_limite_de_dois_dias_e_prazo_em_dia", () => {
+    expect(situacaoDoPrazo("2026-08-30")).toBe("em_atraso");
+    expect(situacaoDoPrazo("2026-09-02")).toBe("a_vencer");
+    expect(situacaoDoPrazo("2026-09-03")).toBe("em_dia");
+  });
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
 });
 
 describe("test_ca_02_busca_e_filtro", () => {

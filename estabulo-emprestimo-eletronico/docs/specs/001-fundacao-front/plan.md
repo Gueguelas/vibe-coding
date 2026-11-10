@@ -1,10 +1,5 @@
 # Plan — 001-fundacao-front
 
-> Estado: plano arquitetural original; o código foi adiantado e implementado
-> parcialmente fora da sequência prevista. A tabela de estrutura abaixo é o
-> desenho alvo, não uma descrição literal da árvore atual. Consulte
-> "Estado observado" e `tasks.md` antes de iniciar trabalho.
-
 Derivado de `spec.md`. Restrições que vêm dos ADRs (não negociáveis):
 
 - **ADR-001 §2**: React, Vite, React Router (data APIs), TanStack Query,
@@ -110,7 +105,6 @@ não existe.
 | vite | ^6.4.4 | Vite 7 exige Node ≥22.12; 6 é o topo compatível |
 | @vitejs/plugin-react | ^5 | peer aceita vite ^6 |
 | vitest | ^4.1.12 | v5 exige Node ^22.12; v4 aceita ^22 |
-| jsdom | ^26.1.0 | v30 exige `require(esm)` (Node ≥22.12); 26 roda em ≥18 |
 | typescript | ^5.9.3 | typescript-eslint aceita `<6.1` |
 | eslint / typescript-eslint | ^10 / ^8.71 | peer `eslint ^10` ok |
 | tailwindcss + @tailwindcss/vite | ^4.3.3 | peer vite ^6 ok; config CSS-first |
@@ -123,42 +117,16 @@ não existe.
 | orval | ^8.43 | ADR-001 §4 |
 | @playwright/test | ^1.x | ADR-001 §8 (browsers instalados na tarefa de E2E) |
 
-Zustand já é usado no código para sessão, fixtures e toast. A intenção do ADR
-é reservá-lo ao estado de cliente; os stores de empréstimos/equipamentos são
-temporários e devem desaparecer quando houver integração persistida.
+Zustand entra quando aparecer estado de cliente real (filtros persistentes,
+wizard) — ADR-001 o prevê, mas não há necessidade dele na fundação.
 
-## 8. Estado observado (05/11/2026)
+## 8. Riscos
 
-- O front implementa scaffold, tokens principais, shell, rotas, login,
-  catálogo, telas demonstrativas de empréstimos/Operações/cadastro e testes.
-- Há diferenças visuais pontuais em relação ao ADR-002: por exemplo, a
-  navegação usa padding horizontal de 32px (40px no ADR) e botões/inputs têm
-  altura mínima de 40px (36px no ADR). O ADR continua normativo; não trate a
-  implementação atual como alteração aprovada do design.
-- O login real usa Supabase Auth; o papel é extraído das claims no front. A
-  rota `GET /v1/sessao` prevista na spec não existe, então o fluxo de papel não
-  cumpre o ADR-001.
-- A leitura do catálogo usa `fetch` manual e schemas Zod locais. Não há
-  `openapi.json` versionado, configuração do Orval ou cliente gerado. Isso é
-  uma divergência do ADR-001, não um novo contrato aprovado.
-- Solicitações, devoluções, Operações e cadastro usam mocks em memória. As
-  telas não substituem os endpoints nem os critérios do PRD.
-- Os testes Playwright existentes cobrem login de demonstração e catálogo;
-  os fluxos completos de solicitar e devolver ainda não estão cobertos.
-- Antes de integrar telas ou substituir mocks, concluir as specs de API e
-  front previstas em `tasks.md`; cada uma deve seguir `spec-flow.md`.
-
-## 9. Riscos e pendências
-
-- `openapi.json` ainda não é exposto pela API — bloqueia a substituição
-  correta do cliente provisório e a integração gerada por Orval.
+- `openapi.json` ainda não é exposto pela API (passo 3 do handoff) — bloqueia
+  as fases 2+; é tarefa de API explícita no tasks.md.
 - CSP restritiva (ADR-001 §10) pode bloquear Google Fonts — se ocorrer,
   self-hostar Raleway é mudança de ADR, avisar antes.
 - Playwright baixa browsers (~300MB) — instalar só na tarefa de E2E, com aviso.
 - Sem Supabase local declarado no projeto: roda-se o front contra o Supabase
   remoto de desenvolvimento só para login manual; testes automatizados nunca
   dependem da rede (mock do client de sessão nos testes).
-- O plano previa `jsdom ^26.1.0`, mas `frontend/package.json` declara
-  `^30.1.3`. Confirmar a versão de Node suportada e atualizar plano ou
-  dependência em tarefa autorizada; não assumir compatibilidade pela tabela
-  histórica de versões acima.

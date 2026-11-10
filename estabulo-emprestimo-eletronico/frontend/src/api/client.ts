@@ -26,12 +26,21 @@ async function buscarPagina(cursor: string | null, token: string | null) {
     const body: unknown = await response.json().catch(() => null);
     const problem =
       typeof body === "object" && body !== null
+<<<<<<< HEAD
         ? (body as { title?: unknown; detail?: unknown })
         : null;
     const detail =
       typeof problem?.detail === "string"
         ? problem.detail
         : typeof problem?.title === "string"
+=======
+        ? body
+        : null;
+    const detail =
+      problem && "detail" in problem && typeof problem.detail === "string"
+        ? problem.detail
+        : problem && "title" in problem && typeof problem.title === "string"
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
           ? problem.title
           : "Não foi possível carregar os equipamentos.";
     throw new ErroApi(detail, response.status);

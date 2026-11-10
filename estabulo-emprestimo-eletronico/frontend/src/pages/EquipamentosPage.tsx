@@ -58,7 +58,11 @@ export function EquipamentosPage() {
   }
 
   function cadastroInvalido() {
+<<<<<<< HEAD
     if (errors.nome) mostrarToast("Informe o nome do equipamento.");
+=======
+    mostrarToast("Informe o nome do equipamento.");
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
   }
 
   return (

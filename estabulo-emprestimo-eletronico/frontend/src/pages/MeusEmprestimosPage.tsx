@@ -5,7 +5,11 @@ import { Dialog } from "@/components/ui/dialog";
 import { Pill } from "@/components/ui/pill";
 import { SectionRule } from "@/components/ui/section-rule";
 import { useContextoUsuario } from "@/features/emprestimos/useContextoUsuario";
+<<<<<<< HEAD
 import { adicionarDias, estaEmAtraso, formatarData, HOJE_MOCK } from "@/lib/datas";
+=======
+import { estaEmAtraso, formatarData, HOJE_MOCK } from "@/lib/datas";
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
 import { registrarDevolucaoMock } from "@/lib/devolucaoMock";
 import { useToast } from "@/stores/toast";
 
@@ -14,7 +18,10 @@ export function MeusEmprestimosPage() {
   const mostrarToast = useToast((estado) => estado.mostrar);
   const [idSelecionado, setIdSelecionado] = useState<string | null>(null);
   const selecionado = meus.find((item) => item.id === idSelecionado);
+<<<<<<< HEAD
   const atrasados = meus.filter((item) => estaEmAtraso(item.prazo)).length;
+=======
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
 
   function confirmarDevolucao() {
     if (!selecionado) return;
@@ -33,12 +40,24 @@ export function MeusEmprestimosPage() {
         </div>
       </section>
       <div className="loan-slots" aria-label={`${meus.length} de 3 itens emprestados`}>
+<<<<<<< HEAD
         {[0, 1, 2].map((slot) => (
           <span
             key={slot}
             className={`loan-slot${slot < meus.length ? atrasados > 0 && slot === 0 ? " overdue" : " occupied" : ""}`}
           />
         ))}
+=======
+        {[0, 1, 2].map((slot) => {
+          const emprestimo = meus[slot];
+          const estado = emprestimo
+            ? estaEmAtraso(emprestimo.prazo)
+              ? "overdue"
+              : "occupied"
+            : "";
+          return <span key={slot} className={`loan-slot ${estado}`} />;
+        })}
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
       </div>
       <SectionRule />
       {meus.length === 0 ? (

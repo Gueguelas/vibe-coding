@@ -20,7 +20,11 @@ $env:VITE_API_URL = "http://localhost:3000"
 $env:VITE_SUPABASE_URL = "https://SEU-PROJETO.supabase.co"
 $env:VITE_SUPABASE_ANON_KEY = "SUA_CHAVE_ANON"
 npm install
+<<<<<<< HEAD
 npm run dev -- --port 5173
+=======
+npm run dev
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
 ```
 
 Abra <http://localhost:5173/login>. Sem `VITE_SUPABASE_URL` e
@@ -71,6 +75,12 @@ Crie um projeto separado para o front, configure o root directory como
 do projeto; mudanças nessas variáveis exigem novo build. A API precisa permitir
 a origem pública do front em `FRONT_ORIGIN`.
 
+<<<<<<< HEAD
+=======
+O servidor de desenvolvimento já fixa a porta 5173. Rode `npm run dev` e abra
+<http://localhost:5173/login>.
+
+>>>>>>> a52456606c59e2feef60eb067f786b93e23ae2a1
 O deploy não foi executado e não há URL pública confirmada. A configuração de
 rewrite SPA deve ser adicionada pelo responsável pelo projeto de deploy antes
 da publicação.
